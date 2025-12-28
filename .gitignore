@@ -1,0 +1,7 @@
+# Environment variables
+.env
+.env.*
+
+# Firebase / Google secrets
+serviceAccountKey.json
+educycle-backend/serviceAccountKey.json
