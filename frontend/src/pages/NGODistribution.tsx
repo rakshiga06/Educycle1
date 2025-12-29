@@ -4,12 +4,15 @@ import Footer from '@/components/layout/Footer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Send, CheckCircle, Users, BookOpen, Calendar, Upload } from 'lucide-react';
+import { Send, CheckCircle, Users, BookOpen, Calendar, Upload, Loader2 } from 'lucide-react';
 import { mockDistributions } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 const NGODistribution = () => {
   const { toast } = useToast();
+  const { profile, loading } = useUserProfile();
+  const orgName = profile?.organization_name || 'Organization';
   const [distributions, setDistributions] = useState(mockDistributions);
 
   const handleVerify = (id: string) => {
@@ -22,9 +25,21 @@ const NGODistribution = () => {
     });
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header userType="ngo" />
+        <main className="flex-1 container py-8 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header userType="ngo" userName="Hope Foundation" />
+      <Header userType="ngo" userName={orgName} />
       
       <main className="flex-1 container py-8">
         <div className="flex items-center gap-3 mb-8">

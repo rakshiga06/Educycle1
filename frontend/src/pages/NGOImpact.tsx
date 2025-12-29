@@ -2,13 +2,28 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import StatCard from '@/components/shared/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, BookOpen, Wallet, Leaf, TreeDeciduous, Recycle, TrendingUp } from 'lucide-react';
-import { mockNGOStats } from '@/data/mockData';
+import { Users, BookOpen, Wallet, Leaf, TreeDeciduous, Recycle, TrendingUp, Loader2 } from 'lucide-react';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 const NGOImpact = () => {
+  const { profile, loading } = useUserProfile();
+  const orgName = profile?.organization_name || 'Organization';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header userType="ngo" />
+        <main className="flex-1 container py-8 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header userType="ngo" userName="Hope Foundation" />
+      <Header userType="ngo" userName={orgName} />
       
       <main className="flex-1 container py-8">
         <div className="mb-8">

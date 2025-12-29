@@ -9,7 +9,7 @@ import { auth } from '@/lib/firebase';
 const StudentImpact = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header userType="student" userName={auth.currentUser?.displayName} />
+      <Header userType="student" />
 
       <main className="flex-1 container py-8">
         <div className="mb-8">

@@ -10,7 +10,6 @@ import { classOptions, boardOptions, subjectOptions } from '@/data/mockData';
 import { booksApi } from '@/lib/api';
 import { Book } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
-import { auth } from '@/lib/firebase';
 
 const SearchBooks = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,7 +64,7 @@ const SearchBooks = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header userType="student" userName={auth.currentUser?.displayName} />
+      <Header userType="student" />
 
       <main className="flex-1 container py-8">
         {/* Page Header */}

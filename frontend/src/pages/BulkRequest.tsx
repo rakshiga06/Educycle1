@@ -6,13 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Package, CheckCircle } from 'lucide-react';
+import { Package, CheckCircle, Loader2 } from 'lucide-react';
 import { boardOptions, subjectOptions, classOptions } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 const BulkRequest = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { profile, loading } = useUserProfile();
+  const orgName = profile?.organization_name || 'Organization';
   
   const [subject, setSubject] = useState('');
   const [bookClass, setBookClass] = useState('');
@@ -39,10 +42,22 @@ const BulkRequest = () => {
     });
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header userType="ngo" />
+        <main className="flex-1 container py-8 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header userType="ngo" userName="Hope Foundation" />
+        <Header userType="ngo" userName={orgName} />
         <main className="flex-1 container py-8">
           <div className="max-w-lg mx-auto text-center">
             <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6 animate-bounce-soft">

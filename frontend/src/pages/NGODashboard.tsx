@@ -1,20 +1,36 @@
+import { useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ActionCard from '@/components/shared/ActionCard';
 import StatCard from '@/components/shared/StatCard';
-import { Package, Truck, Send, BarChart3, Users, BookOpen, Leaf } from 'lucide-react';
-import { mockNGOStats } from '@/data/mockData';
+import { Package, Truck, Send, BarChart3, Users, BookOpen, Leaf, Loader2 } from 'lucide-react';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 const NGODashboard = () => {
+  const { profile, loading } = useUserProfile();
+  const orgName = profile?.organization_name || 'Organization';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header userType="ngo" />
+        <main className="flex-1 container py-8 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header userType="ngo" userName="Hope Foundation" />
+      <Header userType="ngo" userName={orgName} />
       
       <main className="flex-1 container py-8">
         {/* Welcome */}
         <section className="mb-10">
           <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">
-            Welcome, Hope Foundation! 🌱
+            Welcome, {orgName}! 🌱
           </h1>
           <p className="text-lg text-muted-foreground">
             Manage your book collection and distribution activities
@@ -27,7 +43,7 @@ const NGODashboard = () => {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Students Helped"
-              value={mockNGOStats.studentsHelped.toLocaleString()}
+              value="0"
               subtitle="This year"
               icon={Users}
               iconColor="text-primary"
@@ -35,7 +51,7 @@ const NGODashboard = () => {
             />
             <StatCard
               title="Books Distributed"
-              value={mockNGOStats.booksReused.toLocaleString()}
+              value="0"
               subtitle="Total reused"
               icon={BookOpen}
               iconColor="text-secondary"
@@ -43,16 +59,16 @@ const NGODashboard = () => {
             />
             <StatCard
               title="Cost Saved"
-              value={`₹${(mockNGOStats.costSaved / 1000).toFixed(0)}K`}
+              value="₹0"
               subtitle="For students"
               icon={Leaf}
               iconColor="text-success"
               iconBgColor="bg-success/10"
             />
             <StatCard
-              title="CO₂ Saved"
-              value={`${mockNGOStats.co2Saved} kg`}
-              subtitle="Environmental impact"
+              title="Impact Score"
+              value="0"
+              subtitle="Your contribution"
               icon={Leaf}
               iconColor="text-success"
               iconBgColor="bg-success/10"

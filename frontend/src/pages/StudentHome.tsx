@@ -1,20 +1,23 @@
+import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ActionCard from '@/components/shared/ActionCard';
 import { Search, Gift, FileText, BarChart3, Sparkles } from 'lucide-react';
-import { auth } from '@/lib/firebase';
 
 const StudentHome = () => {
+  const { user } = useAuth();
+  const displayName = user?.displayName || 'Student';
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header userType="student" userName={auth.currentUser?.displayName} />
+      <Header userType="student" />
 
       <main className="flex-1 container py-8">
         {/* Welcome Section */}
         <section className="mb-10">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl md:text-4xl font-display font-bold">
-              {/* Hey, {auth.currentUser?.displayName || "Alex"}! 👋 */}
+              Hey, {displayName}! 👋
             </h1>
             <Sparkles className="h-6 w-6 text-warning animate-pulse-soft" />
           </div>

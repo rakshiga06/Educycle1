@@ -11,7 +11,6 @@ import { boardOptions, subjectOptions, classOptions } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
 import { booksApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { auth } from '@/lib/firebase';
 
 const conditionOptions = [
   { id: 'good', label: 'Good', description: 'No damage, clean pages' },
@@ -99,7 +98,7 @@ const DonateBook = () => {
   if (submitted) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header userType="student" userName={auth.currentUser?.displayName} />
+        <Header userType="student" />
         <main className="flex-1 container py-8">
           <div className="max-w-lg mx-auto text-center">
             <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6 animate-bounce-soft">
@@ -142,7 +141,7 @@ const DonateBook = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header userType="student" userName={auth.currentUser?.displayName} />
+      <Header userType="student" />
       
       <main className="flex-1 container py-8">
         <div className="max-w-2xl mx-auto">

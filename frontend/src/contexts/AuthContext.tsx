@@ -6,7 +6,8 @@ import {
   ReactNode,
 } from 'react';
 import { User } from 'firebase/auth';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { onAuthChange } from '@/lib/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -29,10 +30,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [role, setRole] = useState<'student' | 'ngo' | null>(null);
   const [organizationName, setOrganizationName] = useState<string | null>(null);
 
-  const auth = getAuth();
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthChange((firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
 
@@ -44,7 +43,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
 
     return unsubscribe;
-  }, [auth]);
+  }, []);
 
   return (
     <AuthContext.Provider

@@ -5,8 +5,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Package, Clock, CheckCircle, MapPin } from 'lucide-react';
+import { Package, Clock, CheckCircle, MapPin, Loader2 } from 'lucide-react';
 import { mockBulkRequests } from '@/data/mockData';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 const statusConfig = {
   pending: {
@@ -33,9 +34,24 @@ const statusConfig = {
 };
 
 const NGOApprovalStatus = () => {
+  const { profile, loading } = useUserProfile();
+  const orgName = profile?.organization_name || 'Organization';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header userType="ngo" />
+        <main className="flex-1 container py-8 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header userType="ngo" userName="Hope Foundation" />
+      <Header userType="ngo" userName={orgName} />
       
       <main className="flex-1 container py-8">
         <h1 className="text-3xl font-display font-bold mb-2">Request Status</h1>

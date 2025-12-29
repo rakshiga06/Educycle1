@@ -2,7 +2,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Leaf, Menu, X, User, LogOut } from 'lucide-react';
 import { useState } from 'react';
-import { getAuth } from 'firebase/auth';
+import { auth, signOut } from '@/lib/firebase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface HeaderProps {
   userType?: 'student' | 'ngo' | null;
@@ -13,23 +14,30 @@ const Header = ({ userType, userName }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-
-  const auth = getAuth();
-  const firebaseUser = auth.currentUser;
+  const { user: firebaseUser } = useAuth();
 
   const isLoginPage =
     location.pathname === '/' || location.pathname === '/ngo-login';
 
   // ✅ Name resolution logic (IMPORTANT)
-  // Student → Google displayName
-  // NGO → organization name from props
+  // Student → Google displayName from Firebase
+  // NGO → organization name from props (passed from pages)
   // Fallback → "User"
-  const displayName =
-    firebaseUser?.displayName || userName || 'User';
+  const displayName = userType === 'student' 
+    ? (firebaseUser?.displayName || 'User')
+    : (userName || 'User');
 
   const handleLogout = async () => {
-    await auth.signOut();
-    navigate('/');
+    try {
+      if (auth) {
+        await signOut();
+      }
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Navigate anyway
+      navigate('/');
+    }
   };
 
   return (

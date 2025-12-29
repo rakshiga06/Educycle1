@@ -81,7 +81,7 @@ const Chat = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header userType="student" userName={auth.currentUser?.displayName} />
+      <Header userType="student" />
       
       <main className="flex-1 container py-8 flex flex-col">
         <Link to="/request-status" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6">

@@ -10,7 +10,6 @@ import { requestsApi, booksApi } from '@/lib/api';
 import { BookRequest } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { auth } from '@/lib/firebase';
 
 const statusConfig = {
   pending: {
@@ -86,7 +85,7 @@ const RequestStatus = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header userType="student" userName={auth.currentUser?.displayName} />
+      <Header userType="student" />
       <main className="flex-1 container py-8">
         <h1 className="text-3xl font-display font-bold mb-2">My Requests</h1>
         <p className="text-muted-foreground mb-8">

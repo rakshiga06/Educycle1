@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Download, FileText, File } from 'lucide-react';
 import { mockNotes, subjectOptions, classOptions } from '@/data/mockData';
-import { auth } from '@/lib/firebase';
 
 const Notes = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,7 +23,7 @@ const Notes = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header userType="student" userName={auth.currentUser?.displayName} />
+      <Header userType="student" />
       
       <main className="flex-1 container py-8">
         <div className="mb-8">

@@ -50,10 +50,12 @@ const App = () => (
           <Route path="/feedback/:requestId" element={<Feedback />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/student-impact" element={<StudentImpact />} />
+          {/* <Route path="/student-profile" element={<StudentProfile />} /> */}
           <Route path="/donate-book" element={<DonateBook />} />
           
           {/* NGO Routes */}
           <Route path="/ngo-dashboard" element={<NGODashboard />} />
+          {/* <Route path="/ngo-profile" element={<NGOProfile />} /> */}
           <Route path="/bulk-request" element={<BulkRequest />} />
           <Route path="/ngo-approval-status" element={<NGOApprovalStatus />} />
           <Route path="/ngo-collection" element={<NGOCollection />} />

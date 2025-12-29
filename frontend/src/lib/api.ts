@@ -1,4 +1,5 @@
 // API utility functions for backend communication
+import { auth } from './firebase';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -11,16 +12,16 @@ export interface ApiError {
  * Get Firebase ID token for authenticated requests
  */
 async function getAuthToken(): Promise<string | null> {
-  const auth = (window as any).__firebaseAuth;
-  if (auth && auth.currentUser) {
-    try {
-      return await auth.currentUser.getIdToken();
-    } catch (error) {
-      console.error('Error getting auth token:', error);
-      return null;
-    }
+  if (!auth || !auth.currentUser) {
+    return null;
   }
-  return null;
+  
+  try {
+    return await auth.currentUser.getIdToken();
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    return null;
+  }
 }
 
 /**
@@ -257,6 +258,20 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ role }),
     });
+  },
+
+  bootstrapNGO: async (metadata?: { organization_name: string; city: string; area: string }) => {
+    return apiRequest('/auth/bootstrap', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        role: 'ngo',
+        ...(metadata && { metadata })
+      }),
+    });
+  },
+
+  getCurrentUser: async () => {
+    return apiRequest('/auth/me');
   },
 };
 
