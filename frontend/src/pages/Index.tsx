@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { BookOpen, Leaf, Recycle, GraduationCap, Users, Loader2 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import { signInWithGoogle, isFirebaseInitialized, getFirebaseInitError } from '@/lib/firebase';
+import { signInWithGoogle, isFirebaseInitialized, getFirebaseInitError, signInWithEmail, signUpWithEmail } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { authApi } from '@/lib/api';
 
@@ -15,6 +15,12 @@ const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // Email Auth State
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
+  const [isSignUpMode, setIsSignUpMode] = useState(false);
 
   const handleGoogleLogin = async () => {
     // Check Firebase initialization first
@@ -25,88 +31,107 @@ const Index = () => {
         description: errorMsg || 'Please configure Firebase environment variables in .env file',
         variant: 'destructive',
       });
-      console.error('Firebase config missing. Required env vars:', {
-        VITE_FIREBASE_API_KEY: 'required',
-        VITE_FIREBASE_AUTH_DOMAIN: 'required',
-        VITE_FIREBASE_PROJECT_ID: 'required',
-        VITE_FIREBASE_STORAGE_BUCKET: 'required',
-        VITE_FIREBASE_MESSAGING_SENDER_ID: 'required',
-        VITE_FIREBASE_APP_ID: 'required',
-      });
       return;
     }
 
     try {
       setIsGoogleLoading(true);
       const result = await signInWithGoogle();
-      // User successfully signed in
       const user = result.user;
-      
-      // Bootstrap user on backend
+
       try {
         await authApi.bootstrap('student');
       } catch (error) {
         console.error('Bootstrap error:', error);
-        // Continue even if bootstrap fails
       }
-      
+
       toast({
         title: 'Welcome!',
         description: `Signed in as ${user.email}`,
       });
-      
+
       navigate('/student-home');
     } catch (error: any) {
       console.error('Google sign-in error:', error);
-      
       let errorMessage = error.message || 'Failed to sign in with Google';
-      
-      // Handle specific Firebase errors
-      if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Sign-in was cancelled. Please try again.';
-      } else if (error.code === 'auth/popup-blocked') {
-        errorMessage = 'Popup was blocked. Please allow popups for this site and try again.';
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = 'Network error. Please check your internet connection.';
-      }
-      
-      toast({
-        title: 'Sign-in failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      if (error.code === 'auth/popup-closed-by-user') errorMessage = 'Sign-in was cancelled.';
+      toast({ title: 'Sign-in failed', description: errorMessage, variant: 'destructive' });
     } finally {
       setIsGoogleLoading(false);
     }
   };
 
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast({ title: 'Error', description: 'Please enter email and password', variant: 'destructive' });
+      return;
+    }
 
+    try {
+      setIsEmailLoading(true);
+      let result;
+
+      if (isSignUpMode) {
+        result = await signUpWithEmail(email, password);
+      } else {
+        result = await signInWithEmail(email, password);
+      }
+
+      const user = result.user;
+
+      try {
+        await authApi.bootstrap('student');
+      } catch (error) {
+        console.error('Bootstrap error:', error);
+      }
+
+      toast({
+        title: isSignUpMode ? 'Account Created' : 'Welcome Back',
+        description: `Signed in as ${user.email}`,
+      });
+
+      navigate('/student-home');
+    } catch (error: any) {
+      console.error('Email auth error:', error);
+      let errorMessage = isSignUpMode ? 'Sign-up failed' : 'Login failed';
+
+      if (error.code === 'auth/wrong-password') errorMessage = 'Incorrect password';
+      else if (error.code === 'auth/user-not-found') errorMessage = 'User not found. Please sign up.';
+      else if (error.code === 'auth/email-already-in-use') errorMessage = 'Email already in use. Please login.';
+      else if (error.code === 'auth/weak-password') errorMessage = 'Password should be at least 6 characters.';
+
+      toast({ title: 'Authentication Error', description: errorMessage, variant: 'destructive' });
+    } finally {
+      setIsEmailLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      
+
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 gradient-hero opacity-5" />
           <div className="absolute top-20 left-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl animate-float" />
           <div className="absolute bottom-20 right-10 w-40 h-40 bg-success/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }} />
-          
+
           <div className="container relative py-16 md:py-24">
             <div className="max-w-3xl mx-auto text-center space-y-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 text-success text-sm font-medium animate-fade-in">
                 <Leaf className="h-4 w-4" />
                 <span>Join 10,000+ students saving books & the planet</span>
               </div>
-              
+
               <h1 className="text-4xl md:text-6xl font-display font-bold leading-tight animate-slide-up">
                 Give Your Books a{' '}
                 <span className="text-primary">Second Life</span>
               </h1>
-              
+
               <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: '0.1s' }}>
-                EduCycle connects students who need textbooks with those who can share. 
+                EduCycle connects students who need textbooks with those who can share.
                 <span className="text-success font-medium"> Free books. Zero waste. Endless learning.</span>
               </p>
 
@@ -140,33 +165,70 @@ const Index = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button 
-                  variant="default" 
-                  className="w-full gap-2"
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 border-primary/20 hover:bg-primary/5"
                   onClick={handleGoogleLogin}
-                  disabled={isGoogleLoading}
-                  size="lg"
+                  disabled={isGoogleLoading || isEmailLoading}
                 >
                   {isGoogleLoading ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Signing in...
-                    </>
+                    <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    <>
-                      <svg className="h-5 w-5" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                      </svg>
-                      Continue with Google
-                    </>
+                    <svg className="h-5 w-5" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                      <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                      <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                      <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
                   )}
+                  Continue with Google
                 </Button>
-                <p className="text-xs text-center text-muted-foreground">
-                  By continuing, you agree to our Terms & Privacy Policy
-                </p>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or with Email</span></div>
+                </div>
+
+                <form onSubmit={handleEmailAuth} className="space-y-3">
+                  <Input
+                    type="email"
+                    placeholder="Email Address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={isEmailLoading || isGoogleLoading}
+                  />
+                  <Input
+                    type="password"
+                    placeholder={isSignUpMode ? "Create Password (min 6 chars)" : "Password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isEmailLoading || isGoogleLoading}
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isEmailLoading || isGoogleLoading}
+                  >
+                    {isEmailLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      isSignUpMode ? 'Sign Up' : 'Login'
+                    )}
+                  </Button>
+                </form>
+
+                <div className="text-center text-sm">
+                  <span className="text-muted-foreground">{isSignUpMode ? 'Already have an account? ' : 'New to EduCycle? '}</span>
+                  <button
+                    onClick={() => setIsSignUpMode(!isSignUpMode)}
+                    className="text-primary hover:underline font-medium"
+                    type="button"
+                  >
+                    {isSignUpMode ? 'Login' : 'Create Account'}
+                  </button>
+                </div>
               </CardContent>
             </Card>
 
@@ -184,8 +246,8 @@ const Index = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <Link to="/ngo-login">
-                  <Button 
-                    variant="success" 
+                  <Button
+                    variant="success"
                     className="w-full"
                   >
                     Login as NGO Coordinator

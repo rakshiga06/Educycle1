@@ -18,10 +18,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.staticfiles import StaticFiles
+import os
+
+# Create static dir if not exists
+os.makedirs("app/static/uploads", exist_ok=True)
+
 # Health check
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # API routers
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -6,38 +7,77 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Package, Clock, CheckCircle, MapPin, Loader2 } from 'lucide-react';
-import { mockBulkRequests } from '@/data/mockData';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { ngoApi } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
-const statusConfig = {
-  pending: {
+const statusConfig: Record<string, { variant: any; icon: any; label: string; color: string; bgColor: string }> = {
+  open: {
     variant: 'pending' as const,
     icon: Clock,
     label: 'Pending',
     color: 'text-warning',
     bgColor: 'bg-warning/10',
   },
-  partial: {
-    variant: 'approved' as const,
-    icon: Package,
-    label: 'Partial',
-    color: 'text-accent',
-    bgColor: 'bg-accent/10',
-  },
-  fulfilled: {
+  completed: {
     variant: 'approved' as const,
     icon: CheckCircle,
-    label: 'Fulfilled',
+    label: 'Completed',
     color: 'text-success',
     bgColor: 'bg-success/10',
   },
 };
 
-const NGOApprovalStatus = () => {
-  const { profile, loading } = useUserProfile();
-  const orgName = profile?.organization_name || 'Organization';
+// Helper to determine display status
+const getDisplayStatus = (request: any) => {
+  if (request.status === 'completed') {
+    return statusConfig.completed;
+  }
+  const fulfilled = request.fulfilled || 0;
+  const quantity = request.quantity || 0;
+  // If partially fulfilled, show as partial (but backend status is still "open")
+  if (fulfilled > 0 && fulfilled < quantity) {
+    return {
+      variant: 'approved' as const,
+      icon: Package,
+      label: 'Partial',
+      color: 'text-accent',
+      bgColor: 'bg-accent/10',
+    };
+  }
+  return statusConfig.open;
+};
 
-  if (loading) {
+const NGOApprovalStatus = () => {
+  const { profile, loading: profileLoading } = useUserProfile();
+  const { toast } = useToast();
+  const orgName = profile?.organization_name || 'Organization';
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadRequests = async () => {
+      try {
+        setLoading(true);
+        const data = await ngoApi.listBulkRequests();
+        setRequests(Array.isArray(data) ? data : []);
+      } catch (error: any) {
+        console.error('Error loading bulk requests:', error);
+        toast({
+          title: 'Error loading requests',
+          description: error.message || 'Failed to load bulk requests',
+          variant: 'destructive',
+        });
+        setRequests([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRequests();
+  }, [toast]);
+
+  if (profileLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Header userType="ngo" />
@@ -61,10 +101,13 @@ const NGOApprovalStatus = () => {
 
         {/* Request Cards */}
         <div className="space-y-4">
-          {mockBulkRequests.map(request => {
-            const status = statusConfig[request.status];
+          {requests.map(request => {
+            const status = getDisplayStatus(request);
             const StatusIcon = status.icon;
-            const progress = (request.fulfilled / request.quantity) * 100;
+            const fulfilled = request.fulfilled || 0;
+            const quantity = request.quantity || 0;
+            const progress = quantity > 0 ? (fulfilled / quantity) * 100 : 0;
+            const isPartial = fulfilled > 0 && fulfilled < quantity && request.status === 'open';
 
             return (
               <Card key={request.id} variant="elevated">
@@ -79,26 +122,27 @@ const NGOApprovalStatus = () => {
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <h3 className="font-display font-bold text-lg">
-                          {request.subject} - Class {request.class} ({request.board})
+                          {request.subject} - Class {request.class_level} ({request.board})
                         </h3>
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </div>
                       
                       <p className="text-sm text-muted-foreground mb-3">
-                        Requested: {request.quantity} books • {request.reason}
+                        Requested: {quantity} books
+                        {request.city && request.area && ` • ${request.city}, ${request.area}`}
                       </p>
 
                       {/* Progress Bar */}
                       <div className="mb-3">
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-muted-foreground">Fulfilled</span>
-                          <span className="font-medium">{request.fulfilled} / {request.quantity}</span>
+                          <span className="font-medium">{fulfilled} / {quantity}</span>
                         </div>
                         <Progress value={progress} className="h-2" />
                       </div>
 
                       <p className="text-xs text-muted-foreground">
-                        Requested on {new Date(request.requestDate).toLocaleDateString('en-US', {
+                        Requested on {new Date(request.created_at).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric'
@@ -108,7 +152,7 @@ const NGOApprovalStatus = () => {
 
                     {/* Actions */}
                     <div className="shrink-0">
-                      {request.status === 'partial' && (
+                      {isPartial && (
                         <Link to="/ngo-collection">
                           <Button size="sm" className="gap-1">
                             <MapPin className="h-4 w-4" />
@@ -116,7 +160,7 @@ const NGOApprovalStatus = () => {
                           </Button>
                         </Link>
                       )}
-                      {request.status === 'fulfilled' && (
+                      {request.status === 'completed' && (
                         <Link to="/ngo-distribution">
                           <Button variant="outline" size="sm">
                             Distribute Books
@@ -131,7 +175,7 @@ const NGOApprovalStatus = () => {
           })}
         </div>
 
-        {mockBulkRequests.length === 0 && (
+        {requests.length === 0 && (
           <div className="text-center py-12">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
               <Package className="h-8 w-8 text-muted-foreground" />

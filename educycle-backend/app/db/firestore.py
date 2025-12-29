@@ -17,7 +17,18 @@ async def create_user_if_not_exists(uid: str, data: dict):
         ref.set(data)
     else:
         # Update existing user, but preserve existing fields that aren't being updated
-        existing_data = doc.to_dict()
-        # Merge new data with existing, but only update specified fields
-        update_data = {k: v for k, v in data.items() if v is not None}
-        ref.update(update_data)
+        # For NGO, always update organization_name, city, and area if provided (to fix missing data)
+        update_data = {}
+        for k, v in data.items():
+            if v is not None:
+                # Always update organization fields for NGOs even if they exist
+                if k in ["organization_name", "city", "area"]:
+                    update_data[k] = v
+                else:
+                    # Only update other fields if they don't exist or are None
+                    existing_value = doc.to_dict().get(k)
+                    if existing_value is None:
+                        update_data[k] = v
+        
+        if update_data:
+            ref.update(update_data)

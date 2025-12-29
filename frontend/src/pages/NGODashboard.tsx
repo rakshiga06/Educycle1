@@ -1,16 +1,39 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ActionCard from '@/components/shared/ActionCard';
 import StatCard from '@/components/shared/StatCard';
-import { Package, Truck, Send, BarChart3, Users, BookOpen, Leaf, Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Package, Truck, Send, BarChart3, Users, BookOpen, Leaf, Loader2, Clock, CheckCircle } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { ngoApi } from '@/lib/api';
 
 const NGODashboard = () => {
-  const { profile, loading } = useUserProfile();
+  const { profile, loading: profileLoading } = useUserProfile();
   const orgName = profile?.organization_name || 'Organization';
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (loading) {
+  useEffect(() => {
+    const loadRequests = async () => {
+      try {
+        setLoading(true);
+        const data = await ngoApi.listBulkRequests();
+        setRequests(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Error loading requests:', error);
+        setRequests([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRequests();
+  }, []);
+
+  if (profileLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Header userType="ngo" />
@@ -21,6 +44,12 @@ const NGODashboard = () => {
       </div>
     );
   }
+
+  // Calculate stats from requests
+  const totalBooksDistributed = requests.reduce((sum, r) => sum + (r.fulfilled || 0), 0);
+  const totalBooksRequested = requests.reduce((sum, r) => sum + (r.quantity || 0), 0);
+  const pendingRequests = requests.filter(r => r.status === 'open').length;
+  const completedRequests = requests.filter(r => r.status === 'completed').length;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -42,34 +71,34 @@ const NGODashboard = () => {
           <h2 className="text-xl font-display font-bold mb-6">Quick Overview</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              title="Students Helped"
-              value="0"
-              subtitle="This year"
-              icon={Users}
+              title="Total Requests"
+              value={requests.length.toString()}
+              subtitle="Bulk requests"
+              icon={Package}
               iconColor="text-primary"
               iconBgColor="bg-primary/10"
             />
             <StatCard
               title="Books Distributed"
-              value="0"
-              subtitle="Total reused"
+              value={totalBooksDistributed.toString()}
+              subtitle="Total fulfilled"
               icon={BookOpen}
               iconColor="text-secondary"
               iconBgColor="bg-secondary/20"
             />
             <StatCard
-              title="Cost Saved"
-              value="₹0"
-              subtitle="For students"
-              icon={Leaf}
-              iconColor="text-success"
-              iconBgColor="bg-success/10"
+              title="Pending Requests"
+              value={pendingRequests.toString()}
+              subtitle="Awaiting fulfillment"
+              icon={Clock}
+              iconColor="text-warning"
+              iconBgColor="bg-warning/10"
             />
             <StatCard
-              title="Impact Score"
-              value="0"
-              subtitle="Your contribution"
-              icon={Leaf}
+              title="Completed"
+              value={completedRequests.toString()}
+              subtitle="Fulfilled requests"
+              icon={CheckCircle}
               iconColor="text-success"
               iconBgColor="bg-success/10"
             />
@@ -114,6 +143,49 @@ const NGODashboard = () => {
             />
           </div>
         </section>
+
+        {/* Recent Requests */}
+        {requests.length > 0 && (
+          <section className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-display font-bold">Recent Requests</h2>
+              <Link to="/ngo-approval-status">
+                <Button variant="outline" size="sm">
+                  View All
+                </Button>
+              </Link>
+            </div>
+            <div className="space-y-3">
+              {requests.slice(0, 3).map(request => {
+                const fulfilled = request.fulfilled || 0;
+                const quantity = request.quantity || 0;
+                const statusBadge = request.status === 'completed' 
+                  ? <Badge variant="approved">Completed</Badge>
+                  : request.status === 'open'
+                  ? <Badge variant="pending">Pending</Badge>
+                  : <Badge variant="approved">Partial</Badge>;
+                
+                return (
+                  <Card key={request.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-medium">
+                            {request.subject} - Class {request.class_level} ({request.board})
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {fulfilled} / {quantity} books fulfilled
+                          </p>
+                        </div>
+                        {statusBadge}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Tips */}
         <section className="bg-gradient-to-r from-success/5 to-primary/5 rounded-2xl p-6 md:p-8">

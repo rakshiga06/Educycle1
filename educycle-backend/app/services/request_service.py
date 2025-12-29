@@ -31,8 +31,18 @@ async def get_request(request_id: str):
 
 async def list_user_requests(uid: str):
     """Get all requests for a user (as requester or donor)"""
-    docs = db.collection("requests").where("requester_uid", "==", uid).stream()
-    results = []
-    for doc in docs:
-        results.append({**doc.to_dict(), "id": doc.id})
-    return results
+    # Requests where user is the requester
+    requester_docs = db.collection("requests").where("requester_uid", "==", uid).stream()
+    
+    # Requests where user is the donor
+    donor_docs = db.collection("requests").where("donor_uid", "==", uid).stream()
+    
+    results = {}
+    
+    for doc in requester_docs:
+        results[doc.id] = {**doc.to_dict(), "id": doc.id}
+        
+    for doc in donor_docs:
+        results[doc.id] = {**doc.to_dict(), "id": doc.id}
+        
+    return list(results.values())

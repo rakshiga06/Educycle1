@@ -79,11 +79,14 @@ const NGOLogin = () => {
 
       // Bootstrap NGO in backend with metadata
       try {
-        await authApi.bootstrapNGO(isSignUp ? {
+        // Always send metadata if available (for sign-up or if user needs to update profile)
+        const metadata = isSignUp ? {
           organization_name: orgName,
           city: city,
           area: area,
-        } : undefined);
+        } : undefined;
+        
+        await authApi.bootstrapNGO(metadata);
       } catch (error: any) {
         console.error('Bootstrap error:', error);
         // Continue even if bootstrap fails (user might already exist)

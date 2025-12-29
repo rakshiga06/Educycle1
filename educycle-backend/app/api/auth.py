@@ -20,18 +20,20 @@ async def bootstrap(
 ):
     extra = None
     if request.role == "ngo" and request.metadata:
-        # Extract NGO metadata
-        extra = {
-            "organization_name": request.metadata.get("organization_name"),
-            "city": request.metadata.get("city"),
-            "area": request.metadata.get("area"),
-        }
+        # Extract NGO metadata - only include fields that are provided and not None
+        extra = {}
+        if request.metadata.get("organization_name"):
+            extra["organization_name"] = request.metadata.get("organization_name")
+        if request.metadata.get("city"):
+            extra["city"] = request.metadata.get("city")
+        if request.metadata.get("area"):
+            extra["area"] = request.metadata.get("area")
     
     await bootstrap_user(
         uid=token["uid"],
         email=token["email"],
         role=request.role,
-        extra=extra,
+        extra=extra if extra else None,
     )
     return {"status": "ok"}
 

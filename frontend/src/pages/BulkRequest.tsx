@@ -10,39 +10,79 @@ import { Package, CheckCircle, Loader2 } from 'lucide-react';
 import { boardOptions, subjectOptions, classOptions } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { ngoApi } from '@/lib/api';
 
 const BulkRequest = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { profile, loading } = useUserProfile();
+  const { profile, loading: profileLoading } = useUserProfile();
   const orgName = profile?.organization_name || 'Organization';
   
   const [subject, setSubject] = useState('');
   const [bookClass, setBookClass] = useState('');
   const [board, setBoard] = useState('');
   const [quantity, setQuantity] = useState('');
-  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!subject || !bookClass || !board || !quantity || !reason) {
+    if (!subject || !bookClass || !board || !quantity) {
       toast({
-        title: "Please fill all fields",
+        title: "Please fill all required fields",
+        description: "Subject, Class, Board, and Quantity are required.",
         variant: "destructive",
       });
       return;
     }
 
-    setSubmitted(true);
-    toast({
-      title: "Bulk request submitted!",
-      description: "We'll match your request with available donors.",
-    });
+    // If profile doesn't have city/area, we can't proceed
+    // But let's check if they exist in the profile object
+    const city = profile?.city || '';
+    const area = profile?.area || '';
+
+    if (!city || !area) {
+      toast({
+        title: "Organization location missing",
+        description: "Your organization profile needs city and area. Please sign out and sign up again with location details, or contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      
+      const requestData = {
+        subject,
+        class_level: bookClass,
+        board,
+        quantity: parseInt(quantity, 10),
+        city: city,
+        area: area,
+      };
+
+      await ngoApi.createBulkRequest(requestData);
+      
+      setSubmitted(true);
+      toast({
+        title: "Bulk request submitted!",
+        description: "We'll match your request with available donors.",
+      });
+    } catch (error: any) {
+      console.error('Error submitting bulk request:', error);
+      toast({
+        title: "Failed to submit request",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  if (loading) {
+  if (profileLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Header userType="ngo" />
@@ -86,7 +126,7 @@ const BulkRequest = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header userType="ngo" userName="Hope Foundation" />
+      <Header userType="ngo" userName={orgName} />
       
       <main className="flex-1 container py-8">
         <div className="max-w-2xl mx-auto">
@@ -170,23 +210,18 @@ const BulkRequest = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Reason for Request</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="E.g., For underprivileged students in our education center..."
-                  className="w-full h-24 px-4 py-3 rounded-lg border-2 border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary resize-none"
-                />
-              </CardContent>
-            </Card>
-
-            <Button type="submit" size="lg" className="w-full">
-              <Package className="h-5 w-5 mr-2" />
-              Submit Bulk Request
+            <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Package className="h-5 w-5 mr-2" />
+                  Submit Bulk Request
+                </>
+              )}
             </Button>
           </form>
         </div>
