@@ -115,6 +115,8 @@ const NGOLogin = () => {
         setIsSignUp(false);
       } else if (err.code === 'auth/weak-password') {
         errorMessage = 'Password is too weak. Please use a stronger password.';
+      } else if (err.code === 'auth/invalid-credential') {
+        errorMessage = 'Invalid email or password. If you do not have an account, please Sign Up.';
       } else if (err.message) {
         errorMessage = err.message;
       }

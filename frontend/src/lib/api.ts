@@ -236,6 +236,10 @@ export const notesApi = {
 
     return apiRequestMultipart('/notes/', formData);
   },
+
+  getDownloadUrl: (noteId: string) => {
+    return `${API_BASE_URL}/notes/${noteId}/download`;
+  },
 };
 
 // NGO API

@@ -286,7 +286,7 @@ const Notes = () => {
                       <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">Downloads</span>
                       <span className="text-sm font-bold">{note.downloads || 0}</span>
                     </div>
-                    <a href={note.file_url} target="_blank" rel="noopener noreferrer" className="block !w-auto">
+                    <a href={notesApi.getDownloadUrl(note.id)} className="block !w-auto" download>
                       <Button size="sm" className="gap-2 shadow-sm">
                         <Download className="h-4 w-4" />
                         Download
