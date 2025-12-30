@@ -32,14 +32,14 @@ const Chat = () => {
     if (!requestId) return;
     try {
       setLoading(true);
-      const reqData = await requestsApi.getById(requestId);
-      setRequest(reqData);
-      
+      const reqData = await requestsApi.getById(requestId) as any;
+      setRequest(reqData as BookRequest);
+
       // Load book title
       try {
-        const book = await booksApi.getById(reqData.book_id);
+        const book = await booksApi.getById(reqData.book_id) as any;
         setBookTitle(book.title);
-      } catch {}
+      } catch { }
 
       // Load messages using requestId as chatId (they're the same)
       const messagesData = await chatsApi.getMessages(requestId);
@@ -82,7 +82,7 @@ const Chat = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header userType="student" />
-      
+
       <main className="flex-1 container py-8 flex flex-col">
         <Link to="/request-status" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6">
           <ArrowLeft className="h-4 w-4" />
@@ -131,11 +131,10 @@ const Chat = () => {
                       className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                          isOwn
-                            ? 'bg-primary text-primary-foreground rounded-br-md'
-                            : 'bg-muted rounded-bl-md'
-                        }`}
+                        className={`max-w-[80%] rounded-2xl px-4 py-3 ${isOwn
+                          ? 'bg-primary text-primary-foreground rounded-br-md'
+                          : 'bg-muted rounded-bl-md'
+                          }`}
                       >
                         <p className="text-sm">{msg.message}</p>
                         <p className="text-xs opacity-60 mt-1">
@@ -153,11 +152,11 @@ const Chat = () => {
                   <Input
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Type your message..."
+                    placeholder={request?.status === 'approved' ? "Type your message..." : "Chat disabled until request is approved"}
                     className="flex-1"
-                    disabled={sending}
+                    disabled={sending || request?.status !== 'approved'}
                   />
-                  <Button type="submit" size="icon" disabled={sending || !message.trim()}>
+                  <Button type="submit" size="icon" disabled={sending || !message.trim() || request?.status !== 'approved'}>
                     {sending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,9 +33,17 @@ const statusConfig = {
     color: 'text-destructive',
     bgColor: 'bg-destructive/10',
   },
+  completed: {
+    variant: 'completed' as const,
+    icon: CheckCircle,
+    label: 'Completed',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+  },
 };
 
 const RequestStatus = () => {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState<BookRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -55,8 +63,7 @@ const RequestStatus = () => {
       const data = await requestsApi.list() as BookRequest[];
       const requestsList = Array.isArray(data) ? data : [];
       setRequests(requestsList);
-      
-      // Load book titles for each request
+
       const titles: Record<string, string> = {};
       for (const req of requestsList) {
         try {
@@ -79,9 +86,59 @@ const RequestStatus = () => {
     }
   };
 
-  const filteredRequests = selectedStatus === 'all' 
-    ? requests 
-    : requests.filter(r => r.status === selectedStatus);
+  const handleApprove = async (requestId: string) => {
+    try {
+      await requestsApi.approve(requestId);
+      toast({
+        title: "Request Approved!",
+        description: "You can now chat with the student to arrange pickup.",
+      });
+      loadRequests();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve request",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReject = async (requestId: string) => {
+    try {
+      await requestsApi.updateStatus(requestId, 'rejected');
+      toast({
+        title: "Request Rejected",
+        description: "The requester has been notified.",
+      });
+      loadRequests();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reject request",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleComplete = async (requestId: string) => {
+    try {
+      await requestsApi.complete(requestId);
+      toast({
+        title: "Success!",
+        description: "Book receipt confirmed. Please share your feedback!",
+      });
+      navigate(`/feedback/${requestId}`);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to complete request",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const myRequests = requests.filter(r => r.requester_uid === user?.uid);
+  const incomingRequests = requests.filter(r => r.donor_uid === user?.uid);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -89,39 +146,21 @@ const RequestStatus = () => {
       <main className="flex-1 container py-8">
         <h1 className="text-3xl font-display font-bold mb-2">My Requests</h1>
         <p className="text-muted-foreground mb-8">
-          Track the status of your book requests
+          Track and manage your book requests
         </p>
 
         {/* Status Filter Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          <Badge 
-            variant={selectedStatus === 'all' ? 'default' : 'outline'} 
-            className="cursor-pointer"
-            onClick={() => setSelectedStatus('all')}
-          >
-            All ({requests.length})
-          </Badge>
-          <Badge 
-            variant={selectedStatus === 'pending' ? 'default' : 'outline'} 
-            className="cursor-pointer"
-            onClick={() => setSelectedStatus('pending')}
-          >
-            Pending ({requests.filter(r => r.status === 'pending').length})
-          </Badge>
-          <Badge 
-            variant={selectedStatus === 'approved' ? 'default' : 'outline'} 
-            className="cursor-pointer"
-            onClick={() => setSelectedStatus('approved')}
-          >
-            Approved ({requests.filter(r => r.status === 'approved').length})
-          </Badge>
-          <Badge 
-            variant={selectedStatus === 'rejected' ? 'default' : 'outline'} 
-            className="cursor-pointer"
-            onClick={() => setSelectedStatus('rejected')}
-          >
-            Rejected ({requests.filter(r => r.status === 'rejected').length})
-          </Badge>
+        <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+          {['all', 'pending', 'approved', 'rejected', 'completed'].map((status) => (
+            <Badge
+              key={status}
+              variant={selectedStatus === status ? 'default' : 'outline'}
+              className="cursor-pointer capitalize px-4 py-1.5"
+              onClick={() => setSelectedStatus(status)}
+            >
+              {status} ({status === 'all' ? requests.length : requests.filter(r => r.status === status).length})
+            </Badge>
+          ))}
         </div>
 
         {loading && (
@@ -130,95 +169,144 @@ const RequestStatus = () => {
           </div>
         )}
 
-        {/* Request Cards */}
-        {!loading && filteredRequests.length > 0 && (
-          <div className="space-y-4">
-            {filteredRequests.map(request => {
-            const status = statusConfig[request.status];
-            const StatusIcon = status.icon;
+        {/* Outgoing Requests Section */}
+        <div className="mb-12">
+          <h2 className="text-xl font-display font-bold mb-4">Books I've Requested</h2>
+          {!loading && myRequests.length > 0 && (
+            <div className="space-y-4">
+              {myRequests.filter(r => selectedStatus === 'all' || r.status === selectedStatus).map((request: any) => {
+                const status = statusConfig[request.status as keyof typeof statusConfig] || statusConfig.pending;
+                const StatusIcon = status.icon;
 
-            return (
-              <Card key={request.id} variant="elevated">
-                <CardContent className="p-5">
-                  <div className="flex flex-col md:flex-row md:items-center gap-4">
-                    {/* Status Icon */}
-                    <div className={`w-12 h-12 rounded-xl ${status.bgColor} flex items-center justify-center shrink-0`}>
-                      <StatusIcon className={`h-6 w-6 ${status.color}`} />
-                    </div>
-
-                    {/* Request Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-display font-bold text-lg truncate">
-                          {bookTitles[request.id] || 'Loading...'}
-                        </h3>
-                        <Badge variant={status.variant}>{status.label}</Badge>
+                return (
+                  <Card key={request.id} variant="elevated">
+                    <CardContent className="p-5">
+                      <div className="flex flex-col md:flex-row md:items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl ${status.bgColor} flex items-center justify-center shrink-0`}>
+                          <StatusIcon className={`h-6 w-6 ${status.color}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <h3 className="font-display font-bold text-lg truncate">
+                              {bookTitles[request.id] || 'Loading...'}
+                            </h3>
+                            <Badge variant={status.variant}>{status.label}</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Requested on {request.created_at ? new Date(request.created_at).toLocaleDateString() : 'N/A'}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          {request.status === 'approved' && (
+                            <>
+                              <Link to={`/chat/${request.id}`}>
+                                <Button size="sm" className="gap-1">
+                                  <MessageCircle className="h-4 w-4" />
+                                  Chat
+                                </Button>
+                              </Link>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="gap-1"
+                                onClick={() => handleComplete(request.id)}
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                                Confirm Receipt
+                              </Button>
+                            </>
+                          )}
+                          {request.status === 'pending' && (
+                            <Button variant="outline" size="sm" disabled>
+                              Awaiting Response
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Requested on {request.created_at ? new Date(request.created_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        }) : 'N/A'}
-                      </p>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2 shrink-0">
-                      {request.status === 'approved' && (
-                        <>
-                          <Link to={`/chat/${request.id}`}>
-                            <Button size="sm" className="gap-1">
-                              <MessageCircle className="h-4 w-4" />
-                              Chat
-                            </Button>
-                          </Link>
-                          <Link to={`/pickup/${request.id}`}>
-                            <Button variant="outline" size="sm" className="gap-1">
-                              <MapPin className="h-4 w-4" />
-                              Pickup
-                            </Button>
-                          </Link>
-                        </>
-                      )}
-                      {request.status === 'pending' && (
-                        <Button variant="outline" size="sm" disabled>
-                          Awaiting Response
-                        </Button>
-                      )}
-                      {request.status === 'rejected' && (
-                        <Link to="/search-books">
-                          <Button variant="outline" size="sm">
-                            Find Similar Books
-                          </Button>
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-
-                </CardContent>
-              </Card>
-            );
-          })}
-          </div>
-        )}
-
-        {!loading && filteredRequests.length === 0 && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-              <Clock className="h-8 w-8 text-muted-foreground" />
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
-            <h3 className="font-display font-bold text-lg mb-2">No requests yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Start by finding books you need
-            </p>
-            <Link to="/search-books">
-              <Button>Find Books</Button>
-            </Link>
+          )}
+          {!loading && myRequests.length === 0 && (
+            <p className="text-muted-foreground text-center py-8">No book requests made yet.</p>
+          )}
+        </div>
+
+        {/* Incoming Requests Section (For Donors) */}
+        {!loading && incomingRequests.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-xl font-display font-bold mb-4">Requests for My Books</h2>
+            <div className="space-y-4">
+              {incomingRequests.filter(r => selectedStatus === 'all' || r.status === selectedStatus).map((request: any) => {
+                const status = statusConfig[request.status as keyof typeof statusConfig] || statusConfig.pending;
+                const StatusIcon = status.icon;
+
+                return (
+                  <Card key={request.id} variant="elevated" className="border-l-4 border-l-primary">
+                    <CardContent className="p-5">
+                      <div className="flex flex-col md:flex-row md:items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl ${status.bgColor} flex items-center justify-center shrink-0`}>
+                          <StatusIcon className={`h-6 w-6 ${status.color}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <h3 className="font-display font-bold text-lg truncate">
+                              {bookTitles[request.id] || 'Loading...'}
+                            </h3>
+                            <Badge variant={status.variant}>{status.label}</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-1">
+                            Requested by Student ID: {request.requester_uid.slice(0, 8)}...
+                          </p>
+                          {request.reason && (
+                            <p className="text-sm italic text-muted-foreground mb-2">
+                              "{request.reason}"
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Pickup Preference: <span className="capitalize font-medium">{request.pickup_location || 'Not specified'}</span>
+                          </p>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          {request.status === 'pending' && (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => handleApprove(request.id)}
+                                className="bg-success hover:bg-success/90 text-white"
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleReject(request.id)}
+                                className="text-destructive border-destructive hover:bg-destructive/5"
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                          {request.status === 'approved' && (
+                            <Link to={`/chat/${request.id}`}>
+                              <Button size="sm" className="gap-1">
+                                <MessageCircle className="h-4 w-4" />
+                                Chat
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         )}
       </main>
-
       <Footer />
     </div>
   );

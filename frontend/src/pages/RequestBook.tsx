@@ -23,7 +23,7 @@ const RequestBook = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const [reason, setReason] = useState('');
@@ -57,7 +57,7 @@ const RequestBook = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!reason.trim() || !pickupPreference) {
       toast({
         title: "Please fill all fields",
@@ -78,7 +78,7 @@ const RequestBook = () => {
 
     try {
       setSubmitting(true);
-      await requestsApi.create(book.id, book.donor_uid);
+      await requestsApi.create(book.id, book.donor_uid, pickupPreference, reason);
       setSubmitted(true);
       toast({
         title: "Request submitted!",
@@ -126,8 +126,7 @@ const RequestBook = () => {
   if (submitted) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header userType="student" userName={auth.currentUser?.displayName}
- />
+        <Header userType="student" userName={user?.displayName || undefined} />
         <main className="flex-1 container py-8">
           <div className="max-w-lg mx-auto text-center">
             <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6 animate-bounce-soft">
@@ -135,15 +134,15 @@ const RequestBook = () => {
             </div>
             <h1 className="text-3xl font-display font-bold mb-4">Request Submitted!</h1>
             <p className="text-muted-foreground mb-6">
-              Your request for <strong>{book.title}</strong> has been sent. 
+              Your request for <strong>{book.title}</strong> has been sent.
               The donor will review it and get back to you soon.
             </p>
-            
+
             <Card variant="stat" className="mb-8">
               <CardContent className="p-6">
                 <Badge variant="pending" className="mb-3">Pending Approval</Badge>
                 <p className="text-sm text-muted-foreground">
-                  You'll receive a notification once your request is approved. 
+                  You'll receive a notification once your request is approved.
                   Then you can chat with the donor to arrange the pickup.
                 </p>
               </CardContent>
@@ -184,9 +183,9 @@ const RequestBook = () => {
           <Card variant="outlined" className="mb-8">
             <CardContent className="p-4 flex gap-4">
               <div className="w-16 h-20 rounded-lg bg-muted overflow-hidden shrink-0">
-                <img 
-                  src={book.image_urls?.[0] || '/placeholder.svg'} 
-                  alt={book.title} 
+                <img
+                  src={book.image_urls?.[0] || '/placeholder.svg'}
+                  alt={book.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/placeholder.svg';
@@ -233,11 +232,10 @@ const RequestBook = () => {
                 {pickupOptions.map(option => (
                   <label
                     key={option.id}
-                    className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                      pickupPreference === option.id 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border hover:border-primary/30'
-                    }`}
+                    className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${pickupPreference === option.id
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/30'
+                      }`}
                   >
                     <input
                       type="radio"
@@ -247,9 +245,8 @@ const RequestBook = () => {
                       onChange={(e) => setPickupPreference(e.target.value)}
                       className="sr-only"
                     />
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      pickupPreference === option.id ? 'border-primary' : 'border-muted-foreground/30'
-                    }`}>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${pickupPreference === option.id ? 'border-primary' : 'border-muted-foreground/30'
+                      }`}>
                       {pickupPreference === option.id && (
                         <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                       )}

@@ -15,7 +15,7 @@ async function getAuthToken(): Promise<string | null> {
   if (!auth || !auth.currentUser) {
     return null;
   }
-  
+
   try {
     return await auth.currentUser.getIdToken();
   } catch (error) {
@@ -32,7 +32,7 @@ async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = await getAuthToken();
-  
+
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -53,14 +53,14 @@ async function apiRequest<T>(
       message: `API request failed: ${response.statusText}`,
       status: response.status,
     };
-    
+
     try {
       const errorData = await response.json();
       error.message = errorData.detail || errorData.message || error.message;
     } catch {
       // If response is not JSON, use default error message
     }
-    
+
     throw error;
   }
 
@@ -69,7 +69,7 @@ async function apiRequest<T>(
   if (contentType && contentType.includes('application/json')) {
     return await response.json();
   }
-  
+
   return {} as T;
 }
 
@@ -82,7 +82,7 @@ async function apiRequestMultipart<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = await getAuthToken();
-  
+
   const headers: HeadersInit = {
     ...options.headers,
   };
@@ -104,14 +104,14 @@ async function apiRequestMultipart<T>(
       message: `API request failed: ${response.statusText}`,
       status: response.status,
     };
-    
+
     try {
       const errorData = await response.json();
       error.message = errorData.detail || errorData.message || error.message;
     } catch {
       // If response is not JSON, use default error message
     }
-    
+
     throw error;
   }
 
@@ -119,7 +119,7 @@ async function apiRequestMultipart<T>(
   if (contentType && contentType.includes('application/json')) {
     return await response.json();
   }
-  
+
   return {} as T;
 }
 
@@ -139,10 +139,10 @@ export const booksApi = {
 
   donate: async (bookData: any, images: File[]) => {
     const formData = new FormData();
-    
+
     // Add book data as JSON string in a field
     formData.append('payload', JSON.stringify(bookData));
-    
+
     // Add images
     images.forEach((image) => {
       formData.append('images', image);
@@ -162,10 +162,15 @@ export const requestsApi = {
     return apiRequest(`/requests/${requestId}`);
   },
 
-  create: async (bookId: string, donorUid: string) => {
+  create: async (bookId: string, donorUid: string, pickupLocation: string, reason: string) => {
     return apiRequest('/requests/', {
       method: 'POST',
-      body: JSON.stringify({ book_id: bookId, donor_uid: donorUid }),
+      body: JSON.stringify({
+        book_id: bookId,
+        donor_uid: donorUid,
+        pickup_location: pickupLocation,
+        reason: reason
+      }),
     });
   },
 
@@ -178,6 +183,15 @@ export const requestsApi = {
   complete: async (requestId: string) => {
     return apiRequest(`/requests/${requestId}/complete`, {
       method: 'POST',
+    });
+  },
+
+  updateStatus: async (requestId: string, status: string) => {
+    // Assuming backend has a generic update status endpoint or we use specific ones
+    // For rejection, we'll just implement it now in backend too
+    return apiRequest(`/requests/${requestId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
     });
   },
 };
@@ -205,7 +219,11 @@ export const notesApi = {
   list: async (filters: Record<string, string> = {}) => {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.append(key, value);
+      if (value) {
+        // Map frontend 'class' to backend 'class_level' if necessary
+        const apiParam = key === 'class' ? 'class_level' : key;
+        params.append(apiParam, value);
+      }
     });
     const queryString = params.toString();
     return apiRequest(`/notes${queryString ? `?${queryString}` : ''}`);
@@ -263,7 +281,7 @@ export const authApi = {
   bootstrapNGO: async (metadata?: { organization_name: string; city: string; area: string }) => {
     return apiRequest('/auth/bootstrap', {
       method: 'POST',
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         role: 'ngo',
         ...(metadata && { metadata })
       }),
