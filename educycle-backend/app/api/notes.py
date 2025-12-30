@@ -28,5 +28,10 @@ async def upload(
 
 
 @router.get("/")
-async def list_all(**filters):
+async def list_all(subject: str = None, class_level: str = None):
+    filters = {}
+    if subject:
+        filters["subject"] = subject
+    if class_level:
+        filters["class_level"] = class_level
     return await list_notes(filters)

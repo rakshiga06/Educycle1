@@ -2,13 +2,15 @@ from datetime import datetime
 from app.db.firestore import db
 
 
-async def create_request(book_id: str, requester_uid: str, donor_uid: str):
+async def create_request(book_id: str, requester_uid: str, donor_uid: str, pickup_location: str, reason: str):
     ref = db.collection("requests").document()
 
     ref.set({
         "book_id": book_id,
         "requester_uid": requester_uid,
         "donor_uid": donor_uid,
+        "pickup_location": pickup_location,
+        "reason": reason,
         "status": "pending",
         "created_at": datetime.utcnow(),
     })

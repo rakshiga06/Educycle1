@@ -34,6 +34,8 @@ async def request_book(payload: dict, user=Depends(get_current_user)):
         payload["book_id"],
         user["uid"],
         payload["donor_uid"],
+        payload.get("pickup_location", ""),
+        payload.get("reason", ""),
     )
     return {"request_id": req_id}
 
@@ -51,7 +53,18 @@ async def approve(request_id: str, user=Depends(get_current_user)):
     return {"status": "approved"}
 
 
+@router.patch("/{request_id}/status")
+async def update_status(request_id: str, payload: dict, user=Depends(get_current_user)):
+    status = payload.get("status")
+    await update_request_status(request_id, status)
+    return {"status": status}
+
+
 @router.post("/{request_id}/complete")
 async def complete(request_id: str):
     await update_request_status(request_id, "completed")
+    req = await get_request(request_id)
+    if req:
+        from app.services.book_service import mark_book_unavailable
+        await mark_book_unavailable(req["book_id"])
     return {"status": "completed"}
