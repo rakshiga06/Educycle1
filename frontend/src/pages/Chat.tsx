@@ -5,8 +5,8 @@ import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Send, Shield, AlertCircle, Loader2 } from 'lucide-react';
-import { chatsApi, requestsApi, booksApi } from '@/lib/api';
+import { ArrowLeft, Send, Shield, AlertCircle, Loader2, MessageCircle } from 'lucide-react';
+import { chatsApi, requestsApi, booksApi, notificationsApi } from '@/lib/api';
 import { ChatMessage, BookRequest } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,13 +20,33 @@ const Chat = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
 
   useEffect(() => {
     if (requestId && user) {
       loadChat();
+      notificationsApi.markChatRead(requestId);
+
+      // Setup polling for new messages
+      const interval = setInterval(() => {
+        refreshMessages();
+      }, 5000);
+
+      return () => clearInterval(interval);
     }
   }, [requestId, user]);
+
+  const refreshMessages = async () => {
+    if (!requestId) return;
+    try {
+      const messagesData = await chatsApi.getMessages(requestId);
+      setMessages(Array.isArray(messagesData) ? messagesData : []);
+      // Clear notifications for this chat while we are looking at it
+      notificationsApi.markChatRead(requestId);
+    } catch (error) {
+      console.error('Error polling messages:', error);
+    }
+  };
 
   const loadChat = async () => {
     if (!requestId) return;
@@ -81,7 +101,7 @@ const Chat = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header userType="student" />
+      <Header userType={(role as any) || 'student'} />
 
       <main className="flex-1 container py-8 flex flex-col">
         <Link to="/request-status" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6">
@@ -96,7 +116,13 @@ const Chat = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="font-display font-bold">{bookTitle}</h2>
-                  <p className="text-sm text-muted-foreground">Chat with donor to arrange pickup</p>
+                  <p className="text-sm text-muted-foreground">
+                    {request ? (
+                      user?.uid === request.donor_uid
+                        ? `Chat with requester: ${request.requester_name}`
+                        : `Chat with donor: ${request.donor_name}`
+                    ) : 'Loading chat details...'}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -123,27 +149,34 @@ const Chat = () => {
           {!loading && (
             <Card className="flex-1 flex flex-col">
               <CardContent className="flex-1 p-4 space-y-4 overflow-y-auto max-h-[400px]">
-                {messages.map(msg => {
-                  const isOwn = msg.sender_uid === user?.uid;
-                  return (
-                    <div
-                      key={msg.id}
-                      className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
-                    >
+                {messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full py-12 text-center">
+                    <MessageCircle className="h-12 w-12 text-muted-foreground opacity-20 mb-4" />
+                    <p className="text-muted-foreground">No messages yet. Say hello!</p>
+                  </div>
+                ) : (
+                  messages.map(msg => {
+                    const isOwn = msg.sender_uid === user?.uid;
+                    return (
                       <div
-                        className={`max-w-[80%] rounded-2xl px-4 py-3 ${isOwn
-                          ? 'bg-primary text-primary-foreground rounded-br-md'
-                          : 'bg-muted rounded-bl-md'
-                          }`}
+                        key={msg.id}
+                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                       >
-                        <p className="text-sm">{msg.message}</p>
-                        <p className="text-xs opacity-60 mt-1">
-                          {new Date(msg.timestamp).toLocaleString()}
-                        </p>
+                        <div
+                          className={`max-w-[80%] rounded-2xl px-4 py-3 ${isOwn
+                            ? 'bg-primary text-primary-foreground rounded-br-md'
+                            : 'bg-muted rounded-bl-md'
+                            }`}
+                        >
+                          <p className="text-sm">{msg.message}</p>
+                          <p className="text-xs opacity-60 mt-1">
+                            {new Date(msg.timestamp).toLocaleString()}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </CardContent>
 
               {/* Message Input */}
@@ -152,11 +185,19 @@ const Chat = () => {
                   <Input
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder={request?.status === 'approved' ? "Type your message..." : "Chat disabled until request is approved"}
+                    placeholder={
+                      (request?.status === 'approved' || request?.status === 'completed')
+                        ? "Type your message..."
+                        : "Chat disabled until request is approved"
+                    }
                     className="flex-1"
-                    disabled={sending || request?.status !== 'approved'}
+                    disabled={sending || (request?.status !== 'approved' && request?.status !== 'completed')}
                   />
-                  <Button type="submit" size="icon" disabled={sending || !message.trim() || request?.status !== 'approved'}>
+                  <Button
+                    type="submit"
+                    size="icon"
+                    disabled={sending || !message.trim() || (request?.status !== 'approved' && request?.status !== 'completed')}
+                  >
                     {sending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (

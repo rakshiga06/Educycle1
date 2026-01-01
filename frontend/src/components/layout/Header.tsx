@@ -1,9 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Leaf, Menu, X, User, LogOut } from 'lucide-react';
+import { BookOpen, Leaf, Menu, X, User, LogOut, Star } from 'lucide-react';
 import { useState } from 'react';
 import { auth, signOut } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
+import NotificationBell from '@/components/NotificationBell';
 
 interface HeaderProps {
   userType?: 'student' | 'ngo' | null;
@@ -14,7 +15,7 @@ const Header = ({ userType: propUserType, userName: propUserName }: HeaderProps)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user: firebaseUser, role, organizationName } = useAuth();
+  const { user: firebaseUser, role, organizationName, eduCredits } = useAuth();
 
   const userType = propUserType || role;
   const userName = propUserName || organizationName;
@@ -97,6 +98,13 @@ const Header = ({ userType: propUserType, userName: propUserName }: HeaderProps)
         <div className="flex items-center gap-4">
           {userType ? (
             <div className="hidden md:flex items-center gap-3">
+              <NotificationBell />
+              {userType === 'student' && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                  <Star className="h-4 w-4 text-primary fill-primary" />
+                  <span className="text-sm font-bold text-primary">{eduCredits}</span>
+                </div>
+              )}
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted">
                 <User className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium">{displayName}</span>
@@ -112,16 +120,18 @@ const Header = ({ userType: propUserType, userName: propUserName }: HeaderProps)
             </Link>
           ) : null}
 
-          {/* Mobile menu button */}
+          {/* Mobile Notification & menu button */}
           {!isLoginPage && userType && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X /> : <Menu />}
-            </Button>
+            <div className="flex items-center gap-1 md:hidden">
+              <NotificationBell />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X /> : <Menu />}
+              </Button>
+            </div>
           )}
         </div>
       </div>

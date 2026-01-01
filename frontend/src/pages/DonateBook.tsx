@@ -22,7 +22,8 @@ const DonateBook = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
+  const [donationType, setDonationType] = useState<'single' | 'set'>('single');
   const [bookName, setBookName] = useState('');
   const [subject, setSubject] = useState('');
   const [bookClass, setBookClass] = useState('');
@@ -44,11 +45,20 @@ const DonateBook = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!bookName || !subject || !bookClass || !board || !condition || images.length === 0) {
+
+    if ((donationType === 'single' && !bookName) || !bookClass || !board || !condition || images.length === 0) {
       toast({
-        title: "Please fill all fields",
-        description: "All fields including at least one image are required",
+        title: "Please fill all required fields",
+        description: "Class, Board, Condition and at least one image are mandatory.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (donationType === 'single' && !subject) {
+      toast({
+        title: "Subject required",
+        description: "Please select a subject for the single book.",
         variant: "destructive",
       });
       return;
@@ -66,18 +76,19 @@ const DonateBook = () => {
     try {
       setSubmitting(true);
       const bookData = {
-        title: bookName,
-        subject,
+        title: donationType === 'set' ? `Complete Class ${bookClass} Book Set` : bookName,
+        subject: donationType === 'set' ? 'Full Set' : subject,
         class_level: bookClass,
         board,
         condition: condition.toLowerCase(),
         city: city || undefined,
         area: area || undefined,
         description: description || undefined,
+        is_set: donationType === 'set',
       };
-      
+
       await booksApi.donate(bookData, images);
-      
+
       setSubmitted(true);
       toast({
         title: "Book listed for donation!",
@@ -106,10 +117,10 @@ const DonateBook = () => {
             </div>
             <h1 className="text-3xl font-display font-bold mb-4">Book Listed!</h1>
             <p className="text-muted-foreground mb-6">
-              Thank you for your generosity! Your book is now visible to students who need it. 
+              Thank you for your generosity! Your book is now visible to students who need it.
               You'll earn <strong className="text-primary">50 EduCredits</strong> when someone receives it.
             </p>
-            
+
             <Card variant="stat" className="mb-8">
               <CardContent className="p-6 text-left">
                 <h3 className="font-display font-bold mb-2">{bookName}</h3>
@@ -142,7 +153,7 @@ const DonateBook = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header userType="student" />
-            
+
       <main className="flex-1 container py-8">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center gap-3 mb-6">
@@ -150,11 +161,48 @@ const DonateBook = () => {
               <Gift className="h-6 w-6 text-secondary" />
             </div>
             <div>
-              <h1 className="text-3xl font-display font-bold">Donate a Book</h1>
+              <h1 className="text-3xl font-display font-bold">Donate Books</h1>
               <p className="text-muted-foreground">
-                Help a fellow student by sharing books you no longer need
+                Help fellow students by sharing books you no longer need
               </p>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <button
+              onClick={() => setDonationType('single')}
+              className={`p-4 rounded-xl border-2 text-left transition-all ${donationType === 'single'
+                ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                : 'border-border hover:border-primary/30'
+                }`}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${donationType === 'single' ? 'bg-primary text-white' : 'bg-muted'}`}>
+                  <Gift className="h-5 w-5" />
+                </div>
+                <span className="font-bold">Single Book</span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-tight">
+                Donate one specific textbook or notebook
+              </p>
+            </button>
+            <button
+              onClick={() => setDonationType('set')}
+              className={`p-4 rounded-xl border-2 text-left transition-all ${donationType === 'set'
+                ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                : 'border-border hover:border-primary/30'
+                }`}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${donationType === 'set' ? 'bg-primary text-white' : 'bg-muted'}`}>
+                  <Gift className="h-5 w-5" />
+                </div>
+                <span className="font-bold">Full Class Set</span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-tight">
+                Donate all books for a specific grade/year
+              </p>
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -164,30 +212,34 @@ const DonateBook = () => {
                 <CardTitle>Book Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Book Name</label>
-                  <Input
-                    value={bookName}
-                    onChange={(e) => setBookName(e.target.value)}
-                    placeholder="E.g., Mathematics for Class 10"
-                  />
-                </div>
+                {donationType === 'single' && (
+                  <>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Book Name</label>
+                      <Input
+                        value={bookName}
+                        onChange={(e) => setBookName(e.target.value)}
+                        placeholder="E.g., Mathematics for Class 10"
+                      />
+                    </div>
 
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Subject</label>
-                  <div className="flex flex-wrap gap-2">
-                    {subjectOptions.slice(0, 6).map(s => (
-                      <Badge
-                        key={s}
-                        variant={subject === s ? 'default' : 'outline'}
-                        className="cursor-pointer"
-                        onClick={() => setSubject(s)}
-                      >
-                        {s}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Subject</label>
+                      <div className="flex flex-wrap gap-2">
+                        {subjectOptions.slice(0, 6).map(s => (
+                          <Badge
+                            key={s}
+                            variant={subject === s ? 'default' : 'outline'}
+                            className="cursor-pointer"
+                            onClick={() => setSubject(s)}
+                          >
+                            {s}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -233,11 +285,10 @@ const DonateBook = () => {
                 {conditionOptions.map(option => (
                   <label
                     key={option.id}
-                    className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                      condition === option.id 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border hover:border-primary/30'
-                    }`}
+                    className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${condition === option.id
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/30'
+                      }`}
                   >
                     <input
                       type="radio"
@@ -247,9 +298,8 @@ const DonateBook = () => {
                       onChange={(e) => setCondition(e.target.value)}
                       className="sr-only"
                     />
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      condition === option.id ? 'border-primary' : 'border-muted-foreground/30'
-                    }`}>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${condition === option.id ? 'border-primary' : 'border-muted-foreground/30'
+                      }`}>
                       {condition === option.id && (
                         <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                       )}
@@ -275,11 +325,14 @@ const DonateBook = () => {
                 <label className="block">
                   <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
                     <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">
-                      Upload photos of the book cover and inside pages
+                    <p className="text-sm text-muted-foreground font-medium">
+                      {donationType === 'set' ? 'Upload photos of the entire set' : 'Upload photos of the book'}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Max 5 photos • JPG, PNG up to 5MB each
+                      Show the covers and current condition
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 italic">
+                      Max 5 photos • JPG, PNG
                     </p>
                   </div>
                   <input
@@ -355,8 +408,7 @@ const DonateBook = () => {
                 </>
               ) : (
                 <>
-                  <Gift className="h-5 w-5 mr-2" />
-                  List Book for Donation
+                  {donationType === 'set' ? 'List Book Set for Donation' : 'List Book for Donation'}
                 </>
               )}
             </Button>

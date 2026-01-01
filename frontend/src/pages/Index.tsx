@@ -28,8 +28,20 @@ const Index = () => {
   const [isEmailLoading, setIsEmailLoading] = useState(false);
   const [isSignUpMode, setIsSignUpMode] = useState(false);
 
+  // NGO Auth State
+  const [ngoEmail, setNgoEmail] = useState('');
+  const [ngoPassword, setNgoPassword] = useState('');
+  const [ngoOrgName, setNgoOrgName] = useState('');
+  const [ngoCity, setNgoCity] = useState('');
+  const [ngoArea, setNgoArea] = useState('');
+  const [ngoOtp, setNgoOtp] = useState('');
+  const [ngoOtpSent, setNgoOtpSent] = useState(false);
+  const [isNgoSignUpMode, setIsNgoSignUpMode] = useState(false);
+  const [isNgoLoading, setIsNgoLoading] = useState(false);
+
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Attempting to send Student OTP to:', email);
     if (!email) {
       toast({ title: 'Error', description: 'Please enter your email', variant: 'destructive' });
       return;
@@ -39,12 +51,14 @@ const Index = () => {
     try {
       setIsEmailLoading(true);
       await authApi.sendOtp(normalizedEmail);
+      console.log('Student OTP sent successfully');
       setOtpSent(true);
       toast({
         title: 'OTP Sent',
         description: 'Please check your email for the 6-digit verification code.',
       });
     } catch (error: any) {
+      console.error('Student OTP Send Error:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to send OTP',
@@ -57,6 +71,7 @@ const Index = () => {
 
   const handleVerifyAndAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Attempting to verify Student OTP for:', email);
     if (!otp) {
       toast({ title: 'Error', description: 'Please enter the OTP', variant: 'destructive' });
       return;
@@ -106,6 +121,90 @@ const Index = () => {
       });
     } finally {
       setIsEmailLoading(false);
+    }
+  };
+
+  const handleNGOSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Attempting to send NGO OTP to:', ngoEmail);
+    if (!ngoEmail) {
+      toast({ title: 'Error', description: 'Please enter organization email', variant: 'destructive' });
+      return;
+    }
+
+    const normalizedEmail = ngoEmail.trim().toLowerCase();
+    try {
+      setIsNgoLoading(true);
+      await authApi.sendOtp(normalizedEmail);
+      console.log('NGO OTP sent successfully');
+      setNgoOtpSent(true);
+      toast({
+        title: 'OTP Sent',
+        description: 'Verification code sent to organization email.',
+      });
+    } catch (error: any) {
+      console.error('NGO OTP Send Error:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to send OTP',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsNgoLoading(false);
+    }
+  };
+
+  const handleNGOVerifyAndAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Attempting to verify NGO OTP for:', ngoEmail);
+    if (!ngoOtp) {
+      toast({ title: 'Error', description: 'Please enter the OTP', variant: 'destructive' });
+      return;
+    }
+
+    const normalizedEmail = ngoEmail.trim().toLowerCase();
+    try {
+      setIsNgoLoading(true);
+      let customToken;
+
+      if (isNgoSignUpMode) {
+        if (!ngoPassword || !ngoOrgName || !ngoCity || !ngoArea) {
+          toast({ title: 'Error', description: 'Please fill all fields', variant: 'destructive' });
+          return;
+        }
+
+        const result = (await authApi.registerWithOtp({
+          email: normalizedEmail,
+          otp: ngoOtp,
+          password: ngoPassword,
+          role: 'ngo',
+          metadata: { organization_name: ngoOrgName, city: ngoCity, area: ngoArea }
+        })) as any;
+        customToken = result.custom_token;
+      } else {
+        const result = (await authApi.loginWithOtp(normalizedEmail, ngoOtp)) as any;
+        customToken = result.custom_token;
+      }
+
+      if (customToken) {
+        const { signInWithCustomToken } = await import('@/lib/firebase');
+        await signInWithCustomToken(customToken);
+
+        toast({
+          title: isNgoSignUpMode ? 'NGO Account Created' : 'Welcome Back',
+          description: `Signed in as ${ngoEmail}`,
+        });
+        navigate('/ngo-dashboard');
+      }
+    } catch (error: any) {
+      console.error('NGO Auth error:', error);
+      toast({
+        title: 'Authentication Failed',
+        description: error.message || 'Verification failed.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsNgoLoading(false);
     }
   };
 
@@ -360,17 +459,135 @@ const Index = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <form onSubmit={ngoOtpSent ? handleNGOVerifyAndAuth : handleNGOSendOtp} className="space-y-3">
+                  {!ngoOtpSent ? (
+                    <>
+                      <Input
+                        type="email"
+                        placeholder="Organization Email"
+                        value={ngoEmail}
+                        onChange={(e) => setNgoEmail(e.target.value)}
+                        required
+                        disabled={isNgoLoading}
+                      />
+                      <Button
+                        type="submit"
+                        variant="success"
+                        className="w-full"
+                        disabled={isNgoLoading}
+                      >
+                        {isNgoLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          'Send NGO Verification OTP'
+                        )}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="bg-success/5 p-3 rounded-lg mb-2">
+                        <p className="text-xs text-center text-muted-foreground">
+                          OTP sent to <span className="font-medium text-foreground">{ngoEmail}</span>
+                          <button
+                            type="button"
+                            onClick={() => setNgoOtpSent(false)}
+                            className="ml-2 text-success hover:underline"
+                          >
+                            Change
+                          </button>
+                        </p>
+                      </div>
+
+                      <Input
+                        placeholder="6-digit OTP"
+                        value={ngoOtp}
+                        onChange={(e) => setNgoOtp(e.target.value)}
+                        required
+                        maxLength={6}
+                        disabled={isNgoLoading}
+                        className="text-center text-lg tracking-widest font-bold"
+                      />
+
+                      {isNgoSignUpMode && (
+                        <>
+                          <Input
+                            placeholder="Organization Name"
+                            value={ngoOrgName}
+                            onChange={(e) => setNgoOrgName(e.target.value)}
+                            required
+                            disabled={isNgoLoading}
+                          />
+                          <div className="grid grid-cols-2 gap-3">
+                            <Input
+                              placeholder="City"
+                              value={ngoCity}
+                              onChange={(e) => setNgoCity(e.target.value)}
+                              required
+                              disabled={isNgoLoading}
+                            />
+                            <Input
+                              placeholder="Area"
+                              value={ngoArea}
+                              onChange={(e) => setNgoArea(e.target.value)}
+                              required
+                              disabled={isNgoLoading}
+                            />
+                          </div>
+                          <Input
+                            type="password"
+                            placeholder="Dashboard Password"
+                            value={ngoPassword}
+                            onChange={(e) => setNgoPassword(e.target.value)}
+                            required
+                            disabled={isNgoLoading}
+                          />
+                        </>
+                      )}
+
+                      <Button
+                        type="submit"
+                        variant="success"
+                        className="w-full"
+                        disabled={isNgoLoading}
+                      >
+                        {isNgoLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          isNgoSignUpMode ? 'Verify & Create NGO Account' : 'Verify & Login'
+                        )}
+                      </Button>
+                    </>
+                  )}
+                </form>
+
+                <div className="text-center text-sm">
+                  <span className="text-muted-foreground">{isNgoSignUpMode ? 'Already registered? ' : 'Register your NGO? '}</span>
+                  <button
+                    onClick={() => {
+                      setIsNgoSignUpMode(!isNgoSignUpMode);
+                      setNgoOtpSent(false);
+                    }}
+                    className="text-success font-medium hover:underline"
+                    type="button"
+                  >
+                    {isNgoSignUpMode ? 'Login' : 'Register'}
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Detailed Access</span></div>
+                </div>
+
                 <Link to="/ngo-login">
                   <Button
-                    variant="success"
-                    className="w-full"
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs text-muted-foreground hover:text-success"
                   >
-                    Login as NGO Coordinator
+                    Legacy Login / Full Registration Page
                   </Button>
                 </Link>
-                <p className="text-xs text-center text-muted-foreground">
-                  Manage book distribution for your organization
-                </p>
               </CardContent>
             </Card>
           </div>

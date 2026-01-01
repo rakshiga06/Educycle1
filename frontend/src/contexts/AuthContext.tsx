@@ -14,6 +14,7 @@ interface AuthContextType {
   loading: boolean;
   role: 'student' | 'ngo' | null;
   organizationName: string | null;
+  eduCredits: number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,6 +30,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // These will be useful for NGO flow
   const [role, setRole] = useState<'student' | 'ngo' | null>(null);
   const [organizationName, setOrganizationName] = useState<string | null>(null);
+  const [eduCredits, setEduCredits] = useState<number>(0);
+
+  const refreshCredits = async () => {
+    try {
+      const profile = await authApi.getCurrentUser() as any;
+      if (profile) {
+        setEduCredits(profile.edu_credits || 0);
+      }
+    } catch (error) {
+      console.error('Error refreshing credits:', error);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthChange(async (firebaseUser) => {
@@ -45,6 +58,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           if (profile) {
             setRole(profile.role);
             setOrganizationName(profile.organization_name || null);
+            setEduCredits(profile.edu_credits || 0);
           }
         } catch (error) {
           console.error('Error fetching user profile in AuthContext:', error);
@@ -64,6 +78,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         loading,
         role,
         organizationName,
+        eduCredits,
       }}
     >
       {children}

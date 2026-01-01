@@ -8,6 +8,7 @@ async def bootstrap_user(uid: str, email: str, role: str, display_name: str | No
         "email": email,
         "role": role,
         "display_name": display_name,
+        "edu_credits": 0,
         "created_at": datetime.utcnow(),
     }
 

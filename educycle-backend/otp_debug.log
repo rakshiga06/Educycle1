@@ -25,3 +25,12 @@
 2026-01-01T12:53:55.688676 - FOUND DOC: stored_otp=[953769]
 2026-01-01T12:53:55.689645 - SUCCESS: OTP match successful for j08912110@gmail.com
 2026-01-01T12:53:56.077462 - DELETED OTP for [j08912110@gmail.com]
+2026-01-01T16:26:42.501515 - SENDING OTP: email=[subhilogix@gmail.com], otp=[019804]
+2026-01-01T16:27:21.609704 - VERIFYING OTP: email=[subhilogix@gmail.com], otp=[019804]
+2026-01-01T16:27:21.786061 - FOUND DOC: stored_otp=[019804]
+2026-01-01T16:27:21.787105 - SUCCESS: OTP match successful for subhilogix@gmail.com
+2026-01-01T16:27:31.325722 - SENDING OTP: email=[subhilogix@gmail.com], otp=[939886]
+2026-01-01T16:27:49.896120 - VERIFYING OTP: email=[subhilogix@gmail.com], otp=[939886]
+2026-01-01T16:27:50.042483 - FOUND DOC: stored_otp=[939886]
+2026-01-01T16:27:50.046090 - SUCCESS: OTP match successful for subhilogix@gmail.com
+2026-01-01T16:27:50.679787 - DELETED OTP for [subhilogix@gmail.com]

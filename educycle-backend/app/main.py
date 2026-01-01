@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, books, requests, chats, notes, ngo, feedback, impact
+from app.api import auth, books, requests, chats, notes, ngo, feedback, impact, notifications, credits
 
 app = FastAPI(
     title="EduCycle Backend",
@@ -12,8 +12,8 @@ app = FastAPI(
 # CORS (frontend will call this)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -41,3 +41,5 @@ app.include_router(notes.router, prefix="/notes", tags=["Notes"])
 app.include_router(ngo.router, prefix="/ngo", tags=["NGO"])
 app.include_router(feedback.router, prefix="/feedback", tags=["Feedback"])
 app.include_router(impact.router, prefix="/impact", tags=["Impact"])
+app.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
+app.include_router(credits.router, prefix="/credits", tags=["Credits"])

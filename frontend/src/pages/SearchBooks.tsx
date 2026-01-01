@@ -20,6 +20,7 @@ const SearchBooks = () => {
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedBoard, setSelectedBoard] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
+  const [selectedType, setSelectedType] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +35,7 @@ const SearchBooks = () => {
 
   useEffect(() => {
     loadBooks();
-  }, [selectedClass, selectedBoard, selectedSubject]);
+  }, [selectedClass, selectedBoard, selectedSubject, selectedType]);
 
   const loadBooks = async () => {
     try {
@@ -43,6 +44,7 @@ const SearchBooks = () => {
       if (selectedClass) filters.class_level = selectedClass;
       if (selectedBoard) filters.board = selectedBoard;
       if (selectedSubject) filters.subject = selectedSubject;
+      if (selectedType) filters.is_set = selectedType === 'set' ? 'true' : 'false';
 
       const data = await booksApi.search(filters);
       setBooks(Array.isArray(data) ? data : []);
@@ -69,9 +71,10 @@ const SearchBooks = () => {
     setSelectedClass('');
     setSelectedBoard('');
     setSelectedSubject('');
+    setSelectedType('');
   };
 
-  const hasActiveFilters = selectedClass || selectedBoard || selectedSubject;
+  const hasActiveFilters = selectedClass || selectedBoard || selectedSubject || selectedType;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -184,6 +187,27 @@ const SearchBooks = () => {
                       {subject}
                     </Badge>
                   ))}
+                </div>
+              </div>
+
+              {/* Donation Type Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Donation Type</label>
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant={selectedType === 'set' ? 'default' : 'outline'}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedType(selectedType === 'set' ? '' : 'set')}
+                  >
+                    Full Sets Only
+                  </Badge>
+                  <Badge
+                    variant={selectedType === 'single' ? 'default' : 'outline'}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedType(selectedType === 'single' ? '' : 'single')}
+                  >
+                    Single Books
+                  </Badge>
                 </div>
               </div>
             </div>

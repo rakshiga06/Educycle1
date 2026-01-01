@@ -45,11 +45,15 @@ async def request_book(payload: dict, user=Depends(get_current_user)):
 async def approve(request_id: str, user=Depends(get_current_user)):
     await update_request_status(request_id, "approved")
     req = await get_request(request_id)
+    # Fetch book info to get the title
+    from app.services.book_service import get_book
+    book = await get_book(req["book_id"])
+    book_title = book.get("title", "Book Chat") if book else "Book Chat"
 
     await create_chat(request_id, [
         req["requester_uid"],
         req["donor_uid"],
-    ])
+    ], book_title=book_title)
 
     return {"status": "approved"}
 
@@ -66,6 +70,17 @@ async def complete(request_id: str):
     await update_request_status(request_id, "completed")
     req = await get_request(request_id)
     if req:
-        from app.services.book_service import mark_book_unavailable
+        from app.services.book_service import mark_book_unavailable, get_book
+        from app.services.credits_service import add_edu_credits
+        
         await mark_book_unavailable(req["book_id"])
+        
+        # Award credits to donor
+        book = await get_book(req["book_id"])
+        is_set = book.get("is_set", False) if book else False
+        points = 200 if is_set else 50
+        reason = f"Successfully donated {'a book set' if is_set else 'a book'}: {book.get('title', 'Unknown') if book else 'Unknown'}"
+        
+        await add_edu_credits(req["donor_uid"], points, reason)
+        
     return {"status": "completed"}

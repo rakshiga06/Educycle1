@@ -270,6 +270,23 @@ export const impactApi = {
   },
 };
 
+// Notifications API
+export const notificationsApi = {
+  list: async () => {
+    try {
+      return await apiRequest<any[]>('/notifications/');
+    } catch {
+      return [];
+    }
+  },
+  markRead: async (id: string) => {
+    return apiRequest(`/notifications/${id}/read`, { method: 'POST' });
+  },
+  markChatRead: async (chatId: string) => {
+    return apiRequest(`/notifications/read-all-chat/${chatId}`, { method: 'POST' });
+  }
+};
+
 // Auth API
 export const authApi = {
   bootstrap: async (role: string = 'student', metadata?: { fullName?: string; city?: string; area?: string }) => {
@@ -315,6 +332,17 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ email, otp }),
     });
+  },
+};
+
+// Credits API
+export const creditsApi = {
+  getLeaderboard: async (limit: number = 10) => {
+    return apiRequest<any[]>(`/credits/leaderboard?limit=${limit}`);
+  },
+
+  getMyCredits: async () => {
+    return apiRequest<{ edu_credits: number }>('/credits/me');
   },
 };
 

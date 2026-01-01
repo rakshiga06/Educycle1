@@ -1,12 +1,52 @@
+import { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import StatCard from '@/components/shared/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, Wallet, Leaf, Award, TreeDeciduous, Recycle } from 'lucide-react';
-import { mockStudentImpact } from '@/data/mockData';
-import { auth } from '@/lib/firebase';
+import { BookOpen, Wallet, Leaf, Award, TreeDeciduous, Recycle, Gift, Loader2 } from 'lucide-react';
+import { impactApi } from '@/lib/api';
 
 const StudentImpact = () => {
+  const [impactData, setImpactData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchImpact = async () => {
+      try {
+        const data = await impactApi.getUserImpact();
+        setImpactData(data);
+      } catch (error) {
+        console.error('Error fetching impact data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchImpact();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header userType="student" />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const data = impactData || {
+    books_shared: 0,
+    books_received: 0,
+    money_saved_inr: 0,
+    paper_saved_kg: 0,
+    edu_credits: 0,
+    trees_protected: 0,
+    co2_saved_kg: 0
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header userType="student" />
@@ -22,16 +62,16 @@ const StudentImpact = () => {
         {/* Stats Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
-            title="Books Received"
-            value={mockStudentImpact.booksReceived}
-            subtitle="Free textbooks"
-            icon={BookOpen}
+            title="Books Shared"
+            value={data.books_shared}
+            subtitle="Given to others"
+            icon={Gift}
             iconColor="text-primary"
             iconBgColor="bg-primary/10"
           />
           <StatCard
             title="Money Saved"
-            value={`₹${mockStudentImpact.moneySaved.toLocaleString()}`}
+            value={`₹${data.money_saved_inr.toLocaleString()}`}
             subtitle="In book costs"
             icon={Wallet}
             iconColor="text-success"
@@ -39,7 +79,7 @@ const StudentImpact = () => {
           />
           <StatCard
             title="Paper Saved"
-            value={`${mockStudentImpact.paperSaved} kg`}
+            value={`${data.paper_saved_kg.toFixed(1)} kg`}
             subtitle="Less waste"
             icon={Leaf}
             iconColor="text-success"
@@ -47,7 +87,7 @@ const StudentImpact = () => {
           />
           <StatCard
             title="EduCredits"
-            value={mockStudentImpact.eduCredits}
+            value={data.edu_credits}
             subtitle="Points earned"
             icon={Award}
             iconColor="text-warning"
@@ -71,7 +111,7 @@ const StudentImpact = () => {
                   <TreeDeciduous className="h-8 w-8 text-success" />
                 </div>
                 <p className="text-3xl font-display font-bold text-success mb-1">
-                  {mockStudentImpact.treesProtected}
+                  {data.trees_protected}
                 </p>
                 <p className="text-sm text-muted-foreground">Trees Protected</p>
               </div>
@@ -80,7 +120,7 @@ const StudentImpact = () => {
                   <Recycle className="h-8 w-8 text-primary" />
                 </div>
                 <p className="text-3xl font-display font-bold text-primary mb-1">
-                  {mockStudentImpact.booksReceived}
+                  {data.books_shared + data.books_received}
                 </p>
                 <p className="text-sm text-muted-foreground">Books Reused</p>
               </div>
@@ -89,7 +129,7 @@ const StudentImpact = () => {
                   <Leaf className="h-8 w-8 text-accent" />
                 </div>
                 <p className="text-3xl font-display font-bold text-accent mb-1">
-                  {mockStudentImpact.paperSaved * 2} kg
+                  {data.co2_saved_kg.toFixed(1)} kg
                 </p>
                 <p className="text-sm text-muted-foreground">CO₂ Saved</p>
               </div>
@@ -108,7 +148,7 @@ const StudentImpact = () => {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              Earn EduCredits by participating in the EduCycle community. 
+              Earn EduCredits by participating in the EduCycle community.
               Use them to unlock exclusive study materials and features!
             </p>
             <div className="grid sm:grid-cols-3 gap-4 text-sm">

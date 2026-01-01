@@ -14,6 +14,7 @@ export interface Book {
   donor_uid: string;
   donor_name?: string;
   available: boolean;
+  is_set?: boolean;
   created_at?: string;
 }
 
@@ -27,6 +28,9 @@ export interface BookRequest {
   donor_name?: string;
   donor_location?: string;
   status: 'pending' | 'approved' | 'rejected' | 'completed';
+  pickup_location?: string;
+  reason?: string;
+  quantity?: number;
   created_at?: string;
 }
 

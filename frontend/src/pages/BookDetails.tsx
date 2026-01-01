@@ -26,7 +26,7 @@ const BookDetails = () => {
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { role, loading: authLoading } = useAuth(); // Get role from auth context
+  const { user, role, loading: authLoading } = useAuth(); // Get role from auth context
 
   useEffect(() => {
     if (!authLoading && role === 'ngo') {
@@ -132,9 +132,16 @@ const BookDetails = () => {
           {/* Details */}
           <div className="space-y-6">
             <div>
-              <Badge variant={conditionVariant[book.condition] || 'usable'} className="mb-3">
-                {book.condition} Condition
-              </Badge>
+              <div className="flex gap-2">
+                <Badge variant={conditionVariant[book.condition] || 'usable'} className="mb-3">
+                  {book.condition} Condition
+                </Badge>
+                {book.is_set && (
+                  <Badge variant="secondary" className="bg-primary text-primary-foreground mb-3">
+                    Full Class Set
+                  </Badge>
+                )}
+              </div>
               <h1 className="text-3xl font-display font-bold mb-2">{book.title}</h1>
               <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                 <span>{book.subject}</span>
@@ -196,13 +203,23 @@ const BookDetails = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-3">
-              <Button
-                size="lg"
-                className="flex-1"
-                onClick={() => navigate(`/request-book/${book.id}`)}
-              >
-                Request This Book
-              </Button>
+              {book.donor_uid === user?.uid ? (
+                <Button
+                  size="lg"
+                  className="flex-1 opacity-70 cursor-not-allowed"
+                  disabled
+                >
+                  This is your listing
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  className="flex-1"
+                  onClick={() => navigate(`/request-book/${book.id}`)}
+                >
+                  Request This Book
+                </Button>
+              )}
               <Button variant="outline" size="lg">
                 Save for Later
               </Button>

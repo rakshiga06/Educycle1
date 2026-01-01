@@ -35,12 +35,19 @@ const BookCard = ({ book, linkPrefix = '/book' }: BookCardProps) => {
             (e.target as HTMLImageElement).src = '/placeholder.svg';
           }}
         />
-        <Badge
-          variant={conditionKey}
-          className="absolute top-3 right-3"
-        >
-          {condition}
-        </Badge>
+        <div className="absolute top-3 inset-x-3 flex justify-between items-start">
+          {book.is_set && (
+            <Badge variant="secondary" className="bg-primary text-primary-foreground border-none shadow-sm">
+              Full Set
+            </Badge>
+          )}
+          <div className="flex-1" />
+          <Badge
+            variant={conditionKey}
+          >
+            {condition}
+          </Badge>
+        </div>
       </div>
       <CardContent className="p-4">
         <h3 className="font-display font-bold text-sm line-clamp-2 mb-2 min-h-[2.5rem]">
