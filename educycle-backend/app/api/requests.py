@@ -46,9 +46,13 @@ async def approve(request_id: str, user=Depends(get_current_user)):
     await update_request_status(request_id, "approved")
     req = await get_request(request_id)
     # Fetch book info to get the title
-    from app.services.book_service import get_book
+    # Fetch book info to get the title
+    from app.services.book_service import get_book, mark_book_unavailable
     book = await get_book(req["book_id"])
     book_title = book.get("title", "Book Chat") if book else "Book Chat"
+
+    # Mark book unavailable immediately
+    await mark_book_unavailable(req["book_id"])
 
     await create_chat(request_id, [
         req["requester_uid"],

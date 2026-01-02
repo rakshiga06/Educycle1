@@ -97,3 +97,28 @@
 2026-01-02T06:08:40.359411 - VERIFYING OTP: email=[vglakshmii@gmail.com], otp=[278740]
 2026-01-02T06:08:40.648918 - FOUND DOC: stored_otp=[278740]
 2026-01-02T06:08:40.650521 - SUCCESS: OTP match successful for vglakshmii@gmail.com
+2026-01-02T08:48:11.425025 - SENDING OTP: email=[test@gmail.com], otp=[045894]
+2026-01-02T08:48:43.751385 - VERIFYING OTP: email=[test@gmail.com], otp=[045894]
+2026-01-02T08:48:43.933942 - FOUND DOC: stored_otp=[045894]
+2026-01-02T08:48:43.934228 - SUCCESS: OTP match successful for test@gmail.com
+2026-01-02T08:48:45.749867 - DELETED OTP for [test@gmail.com]
+2026-01-02T08:52:55.548204 - SENDING OTP: email=[contact@techforall.org], otp=[126219]
+2026-01-02T08:53:08.334658 - VERIFYING OTP: email=[contact@techforall.org], otp=[126219]
+2026-01-02T08:53:08.482595 - FOUND DOC: stored_otp=[126219]
+2026-01-02T08:53:08.483248 - SUCCESS: OTP match successful for contact@techforall.org
+2026-01-02T08:53:09.010729 - DELETED OTP for [contact@techforall.org]
+2026-01-02T09:01:12.981134 - SENDING OTP: email=[contact@techforall.org], otp=[070761]
+2026-01-02T09:01:24.798457 - VERIFYING OTP: email=[contact@techforall.org], otp=[070761]
+2026-01-02T09:01:24.945122 - FOUND DOC: stored_otp=[070761]
+2026-01-02T09:01:24.946052 - SUCCESS: OTP match successful for contact@techforall.org
+2026-01-02T09:01:25.606638 - DELETED OTP for [contact@techforall.org]
+2026-01-02T09:04:03.501051 - SENDING OTP: email=[contact@techforall.org], otp=[661154]
+2026-01-02T09:04:14.152897 - VERIFYING OTP: email=[contact@techforall.org], otp=[661154]
+2026-01-02T09:04:14.318248 - FOUND DOC: stored_otp=[661154]
+2026-01-02T09:04:14.318812 - SUCCESS: OTP match successful for contact@techforall.org
+2026-01-02T09:04:14.883511 - DELETED OTP for [contact@techforall.org]
+2026-01-02T09:05:15.283339 - SENDING OTP: email=[contact@techforall.org], otp=[340872]
+2026-01-02T09:05:27.481231 - VERIFYING OTP: email=[contact@techforall.org], otp=[340872]
+2026-01-02T09:05:27.638641 - FOUND DOC: stored_otp=[340872]
+2026-01-02T09:05:27.638970 - SUCCESS: OTP match successful for contact@techforall.org
+2026-01-02T09:05:28.159727 - DELETED OTP for [contact@techforall.org]

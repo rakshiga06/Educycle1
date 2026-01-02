@@ -21,14 +21,30 @@ async def calculate_user_impact(uid: str):
     total_reused = books_shared + books_received
     
     # Impact calculations
-    paper_saved = total_reused * 0.8  # kg estimate per book
-    money_saved = books_received * 450  # average INR per book saved for requester
+    # NGO Stats: Requests received as donor
+    donor_requests_docs = db.collection("requests").where("donor_uid", "==", uid).stream()
+    donor_requests = list(donor_requests_docs)
+    
+    total_requests_received = len(donor_requests)
+    pending_requests_received = sum(1 for r in donor_requests if r.to_dict().get("status") == "pending")
+    completed_requests_received = sum(1 for r in donor_requests if r.to_dict().get("status") == "completed")
+    
+    # Impact calculations
+    # For NGOs, impact is largely based on books they redistributed (completed requests received)
+    # plus any books they personally donated elsewhere (books_shared)
+    total_books_circulated = books_shared + completed_requests_received
+    
+    paper_saved = total_books_circulated * 0.8  # kg estimate per book
+    money_saved = total_books_circulated * 450  # average INR per book saved for community
     trees_protected = round(paper_saved / 15.0, 2) # 1 tree ~ 15kg paper
     co2_saved = paper_saved * 2.1 # kg CO2 per kg paper
 
     return {
         "books_shared": books_shared,
         "books_received": books_received,
+        "total_requests_received": total_requests_received,
+        "pending_requests_received": pending_requests_received,
+        "completed_requests_received": completed_requests_received,
         "total_reused": total_reused,
         "edu_credits": edu_credits,
         "money_saved_inr": money_saved,
