@@ -59,17 +59,12 @@ const Footer = () => {
             <h4 className="font-display font-bold text-sm mb-4">Support</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                  Help Center
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/safety" className="text-muted-foreground hover:text-primary transition-colors">
                   Safety Guidelines
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <a href="mailto:support@educycle.org" className="text-muted-foreground hover:text-primary transition-colors">
                   Contact Us
                 </a>
               </li>

@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 
 const NotificationBell = () => {
     const [notifications, setNotifications] = useState<any[]>([]);
-    const { user } = useAuth();
+    const { user, role } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -35,8 +35,18 @@ const NotificationBell = () => {
         await notificationsApi.markRead(notification.id);
         setNotifications(notifications.filter(n => n.id !== notification.id));
 
-        if (notification.type === 'chat') {
+        const isNGO = role === 'ngo';
+        const requestStatusPath = isNGO ? '/ngo-my-requests' : '/request-status';
+
+        if (notification.type === 'chat' || notification.type === 'request_accepted') {
+            // Both chat notifications and acceptance lead to the chat interface
             navigate(`/chat/${notification.related_id}`);
+        } else if (notification.type === 'new_request') {
+            // New requests go to the status/management page
+            navigate(requestStatusPath);
+        } else if (notification.type === 'request_rejected') {
+            // Rejections go to the status page so they can see what happened
+            navigate(requestStatusPath);
         }
     };
 
@@ -74,12 +84,25 @@ const NotificationBell = () => {
                                 onClick={() => handleNotificationClick(n)}
                             >
                                 <div className="flex gap-3">
-                                    <div className="mt-1 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                                        <MessageCircle className="h-4 w-4 text-primary" />
+                                    <div className={`mt-1 h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${n.type === 'chat' ? 'bg-primary/10' :
+                                        n.type === 'request_accepted' ? 'bg-success/10' :
+                                            'bg-accent/20'
+                                        }`}>
+                                        {n.type === 'chat' ? (
+                                            <MessageCircle className="h-4 w-4 text-primary" />
+                                        ) : (
+                                            <Bell className={`h-4 w-4 ${n.type === 'request_accepted' ? 'text-success' : 'text-accent-foreground'
+                                                }`} />
+                                        )}
                                     </div>
-                                    <div className="flex flex-col gap-1">
-                                        <p className="text-sm font-medium leading-none">{n.message}</p>
-                                        <p className="text-xs text-muted-foreground">
+                                    <div className="flex flex-col gap-1 w-full overflow-hidden">
+                                        {n.title && (
+                                            <p className="text-sm font-bold text-foreground truncate">{n.title}</p>
+                                        )}
+                                        <p className="text-xs text-muted-foreground line-clamp-2">
+                                            {n.body || n.message}
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground mt-1">
                                             {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </p>
                                     </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -552,6 +552,11 @@ const DonateBook = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-500 leading-relaxed text-center">
+              By donating, you agree to our <Link to="/safety" className="text-primary font-bold hover:underline">Safety Guidelines</Link>.
+              Always prioritize meeting at verified NGO locations or safe public spaces for the book handover.
+            </div>
 
             <Button type="submit" size="lg" className="w-full" variant="secondary" disabled={submitting}>
               {submitting ? (

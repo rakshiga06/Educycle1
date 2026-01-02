@@ -6,13 +6,15 @@ import StatCard from '@/components/shared/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, BookOpen, Wallet, Leaf, TreeDeciduous, Recycle, TrendingUp, Loader2 } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { useEffect } from 'react';
-import { mockNGOStats } from '@/data/mockData';
+import { useState, useEffect } from 'react';
+import { impactApi } from '@/lib/api';
 
 const NGOImpact = () => {
   const navigate = useNavigate();
-  const { role, loading: authLoading } = useAuth();
+  const { role, loading: authLoading, user } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
+  const [impactData, setImpactData] = useState<any>(null);
+  const [fetchingImpact, setFetchingImpact] = useState(true);
 
   useEffect(() => {
     if (!authLoading && role === 'student') {
@@ -20,8 +22,26 @@ const NGOImpact = () => {
     }
   }, [role, authLoading, navigate]);
 
+  useEffect(() => {
+    const fetchImpact = async () => {
+      try {
+        setFetchingImpact(true);
+        const data = await impactApi.getUserImpact();
+        setImpactData(data);
+      } catch (error) {
+        console.error('Error fetching impact data:', error);
+      } finally {
+        setFetchingImpact(false);
+      }
+    };
+
+    if (user) {
+      fetchImpact();
+    }
+  }, [user]);
+
   const orgName = profile?.organization_name || 'Organization';
-  const loading = authLoading || profileLoading;
+  const loading = authLoading || profileLoading || fetchingImpact;
 
   if (loading) {
     return (
@@ -51,7 +71,7 @@ const NGOImpact = () => {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
             title="Students Helped"
-            value={mockNGOStats.studentsHelped.toLocaleString()}
+            value={(impactData?.students_helped || 0).toLocaleString()}
             subtitle="Lives impacted"
             icon={Users}
             iconColor="text-primary"
@@ -59,7 +79,7 @@ const NGOImpact = () => {
           />
           <StatCard
             title="Books Reused"
-            value={mockNGOStats.booksReused.toLocaleString()}
+            value={(impactData?.total_reused || 0).toLocaleString()}
             subtitle="Given new homes"
             icon={BookOpen}
             iconColor="text-secondary"
@@ -67,7 +87,7 @@ const NGOImpact = () => {
           />
           <StatCard
             title="Cost Saved"
-            value={`₹${(mockNGOStats.costSaved / 1000).toFixed(0)}K`}
+            value={`₹${((impactData?.money_saved_inr || 0) / 1000).toFixed(1)}K`}
             subtitle="For families"
             icon={Wallet}
             iconColor="text-success"
@@ -75,7 +95,7 @@ const NGOImpact = () => {
           />
           <StatCard
             title="CO₂ Saved"
-            value={`${mockNGOStats.co2Saved} kg`}
+            value={`${impactData?.co2_saved_kg || 0} kg`}
             subtitle="Carbon footprint reduced"
             icon={Leaf}
             iconColor="text-success"
@@ -99,7 +119,7 @@ const NGOImpact = () => {
                   <TreeDeciduous className="h-7 w-7 text-success" />
                 </div>
                 <p className="text-2xl font-display font-bold text-success mb-1">
-                  175
+                  {impactData?.trees_protected || 0}
                 </p>
                 <p className="text-sm text-muted-foreground">Trees Protected</p>
               </div>
@@ -108,7 +128,7 @@ const NGOImpact = () => {
                   <Recycle className="h-7 w-7 text-primary" />
                 </div>
                 <p className="text-2xl font-display font-bold text-primary mb-1">
-                  {mockNGOStats.booksReused}
+                  {impactData?.total_reused || 0}
                 </p>
                 <p className="text-sm text-muted-foreground">Books Recycled</p>
               </div>
@@ -117,7 +137,7 @@ const NGOImpact = () => {
                   <Leaf className="h-7 w-7 text-accent" />
                 </div>
                 <p className="text-2xl font-display font-bold text-accent mb-1">
-                  8,400 kg
+                  {impactData?.paper_saved_kg || 0} kg
                 </p>
                 <p className="text-sm text-muted-foreground">Paper Saved</p>
               </div>
@@ -126,70 +146,14 @@ const NGOImpact = () => {
                   <TrendingUp className="h-7 w-7 text-warning" />
                 </div>
                 <p className="text-2xl font-display font-bold text-warning mb-1">
-                  42%
+                  {((impactData?.total_reused || 0) > 0 ? 'Active' : 'Starting')}
                 </p>
-                <p className="text-sm text-muted-foreground">Growth This Year</p>
+                <p className="text-sm text-muted-foreground">Growth Status</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Monthly Breakdown */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Distribution by Subject</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  { subject: 'Mathematics', count: 850, color: 'bg-primary' },
-                  { subject: 'Science', count: 720, color: 'bg-success' },
-                  { subject: 'English', count: 580, color: 'bg-accent' },
-                  { subject: 'Social Studies', count: 420, color: 'bg-secondary' },
-                  { subject: 'Hindi', count: 350, color: 'bg-warning' },
-                ].map(item => (
-                  <div key={item.subject}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>{item.subject}</span>
-                      <span className="font-medium">{item.count} books</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${item.color} rounded-full`}
-                        style={{ width: `${(item.count / 850) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Achievements</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  { title: '1000+ Students Milestone', date: 'Dec 2024', icon: '🎉' },
-                  { title: 'Zero Waste Month', date: 'Nov 2024', icon: '♻️' },
-                  { title: 'Community Partner Award', date: 'Oct 2024', icon: '🏆' },
-                  { title: '100 Trees Saved', date: 'Sep 2024', icon: '🌳' },
-                ].map((achievement, i) => (
-                  <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                    <span className="text-2xl">{achievement.icon}</span>
-                    <div>
-                      <p className="font-medium">{achievement.title}</p>
-                      <p className="text-xs text-muted-foreground">{achievement.date}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </main>
 
       <Footer />

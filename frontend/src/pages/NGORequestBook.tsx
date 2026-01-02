@@ -12,11 +12,6 @@ import { Book } from '@/types/api';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
-const pickupOptions = [
-  { id: 'school', label: 'School Library', description: 'Meet at your school library' },
-  { id: 'library', label: 'Public Library', description: 'Meet at a public library near you' },
-  { id: 'ngo', label: 'NGO Center', description: 'Meet at a verified NGO center' },
-];
 
 const NGORequestBook = () => {
   const { id } = useParams();
@@ -48,8 +43,14 @@ const NGORequestBook = () => {
     if (!id) return;
     try {
       setLoading(true);
-      const data = await booksApi.getById(id);
-      setBook(data as Book);
+      const data = await booksApi.getById(id) as Book;
+      setBook(data);
+      // Automatically set pickup preference to donor's preferred location if available
+      if (data.pickup_location) {
+        setPickupPreference(data.pickup_location);
+      } else {
+        setPickupPreference(data.area || data.city || 'Donor Location');
+      }
     } catch (error: any) {
       console.error('Error loading book:', error);
       toast({
@@ -65,10 +66,10 @@ const NGORequestBook = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!reason.trim() || !pickupPreference) {
+    if (!reason.trim()) {
       toast({
         title: "Please fill all fields",
-        description: "Tell us why you need this book and select a pickup location",
+        description: "Tell us why you need this book",
         variant: "destructive",
       });
       return;
@@ -183,7 +184,7 @@ const NGORequestBook = () => {
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-display font-bold mb-2">Request Book</h1>
           <p className="text-muted-foreground mb-8">
-            Tell us why you need this book and where you'd like to pick it up
+            Tell us why you need this book for your organization
           </p>
 
           {/* Book Summary */}
@@ -251,40 +252,23 @@ const NGORequestBook = () => {
               </CardContent>
             </Card>
 
-            {/* Pickup Preference */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Where would you like to pick up?</CardTitle>
+            {/* Pickup Location Display (Donor's Choice) */}
+            <Card className="border-secondary/20 bg-secondary/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-secondary" />
+                  Pickup Location
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {pickupOptions.map(option => (
-                  <label
-                    key={option.id}
-                    className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${pickupPreference === option.id
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/30'
-                      }`}
-                  >
-                    <input
-                      type="radio"
-                      name="pickup"
-                      value={option.id}
-                      checked={pickupPreference === option.id}
-                      onChange={(e) => setPickupPreference(e.target.value)}
-                      className="sr-only"
-                    />
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${pickupPreference === option.id ? 'border-primary' : 'border-muted-foreground/30'
-                      }`}>
-                      {pickupPreference === option.id && (
-                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium">{option.label}</p>
-                      <p className="text-sm text-muted-foreground">{option.description}</p>
-                    </div>
-                  </label>
-                ))}
+              <CardContent>
+                <p className="font-medium text-lg">
+                  {book.pickup_location || `${book.area}${book.area && book.city ? ', ' : ''}${book.city}` || 'To be coordinated with donor'}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {book.pickup_location
+                    ? "The donor has selected this verified safe pickup location."
+                    : "This is the donor's general location. You can coordinate the exact meeting point after approval."}
+                </p>
               </CardContent>
             </Card>
 

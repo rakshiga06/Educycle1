@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Package, Truck, Send, BarChart3, Users, BookOpen, Leaf, Loader2, Clock, CheckCircle, Search } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { ngoApi } from '@/lib/api';
+import { ngoApi, requestsApi } from '@/lib/api';
 
 const NGODashboard = () => {
   const navigate = useNavigate();
@@ -24,25 +24,33 @@ const NGODashboard = () => {
   }, [role, authLoading, navigate]);
 
   const orgName = profile?.organization_name || 'Organization';
-  const [requests, setRequests] = useState<any[]>([]);
+  const [bulkRequests, setBulkRequests] = useState<any[]>([]);
+  const [individualRequests, setIndividualRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadRequests = async () => {
+    const loadAllRequests = async () => {
+      if (authLoading || role !== 'ngo') return;
+
       try {
         setLoading(true);
-        const data = await ngoApi.listBulkRequests();
-        setRequests(Array.isArray(data) ? data : []);
+        // Fetch both bulk requests and individual requests
+        const [bulkData, indData] = await Promise.all([
+          ngoApi.listBulkRequests(),
+          requestsApi.list()
+        ]);
+
+        setBulkRequests(Array.isArray(bulkData) ? bulkData : []);
+        setIndividualRequests(Array.isArray(indData) ? indData : []);
       } catch (error) {
         console.error('Error loading requests:', error);
-        setRequests([]);
       } finally {
         setLoading(false);
       }
     };
 
-    loadRequests();
-  }, []);
+    loadAllRequests();
+  }, [authLoading, role]);
 
   if (profileLoading) {
     return (
@@ -56,11 +64,20 @@ const NGODashboard = () => {
     );
   }
 
-  // Calculate stats from requests
-  const totalBooksDistributed = requests.reduce((sum, r) => sum + (r.fulfilled || 0), 0);
-  const totalBooksRequested = requests.reduce((sum, r) => sum + (r.quantity || 0), 0);
-  const pendingRequests = requests.filter(r => r.status === 'open').length;
-  const completedRequests = requests.filter(r => r.status === 'completed').length;
+  // Aggregated calculations for both bulk and individual requests
+  const totalBooksDistributed =
+    bulkRequests.reduce((sum, r) => sum + (r.fulfilled || 0), 0) +
+    individualRequests.filter(r => r.status === 'completed').length;
+
+  const totalRequestsCount = bulkRequests.length + individualRequests.length;
+
+  const pendingRequests =
+    bulkRequests.filter(r => r.status === 'open').length +
+    individualRequests.filter(r => ['pending', 'approved', 'accepted'].includes(r.status)).length;
+
+  const completedRequests =
+    bulkRequests.filter(r => r.status === 'completed').length +
+    individualRequests.filter(r => r.status === 'completed').length;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -83,8 +100,8 @@ const NGODashboard = () => {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Total Requests"
-              value={requests.length.toString()}
-              subtitle="Bulk requests"
+              value={totalRequestsCount.toString()}
+              subtitle="Bulk & Individual"
               icon={Package}
               iconColor="text-primary"
               iconBgColor="bg-primary/10"

@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     FIREBASE_PROJECT_ID: str
     FIREBASE_STORAGE_BUCKET: str
     FIREBASE_SERVICE_ACCOUNT: str  # path to serviceAccountKey.json
+    FIREBASE_API_KEY: str
 
     # SMTP Settings
     SMTP_HOST: str = "smtp.gmail.com"

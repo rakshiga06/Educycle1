@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -87,7 +87,7 @@ const StudentHome = () => {
             </div>
             <div className="bg-card rounded-xl p-4 shadow-soft">
               <p className="text-muted-foreground">
-                <strong className="text-foreground">Safe pickups only!</strong> Always meet at verified locations like schools or libraries.
+                <strong className="text-foreground">Safe pickups only!</strong> Always meet at verified locations. <Link to="/safety" className="text-primary hover:underline">Learn more.</Link>
               </p>
             </div>
             <div className="bg-card rounded-xl p-4 shadow-soft">

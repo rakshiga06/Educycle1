@@ -19,6 +19,7 @@ import Feedback from "./pages/Feedback";
 import Notes from "./pages/Notes";
 import StudentImpact from "./pages/StudentImpact";
 import DonateBook from "./pages/DonateBook";
+import SafetyGuidelines from "./pages/SafetyGuidelines";
 // NGO Pages
 import NGODashboard from "./pages/NGODashboard";
 import NGOProfile from "./pages/NGOProfile";
@@ -62,6 +63,7 @@ const App = () => (
           <Route path="/student-impact" element={<StudentImpact />} />
           {/* <Route path="/student-profile" element={<StudentProfile />} /> */}
           <Route path="/donate-book" element={<DonateBook />} />
+          <Route path="/safety" element={<SafetyGuidelines />} />
 
           {/* NGO Routes */}
           <Route path="/ngo-dashboard" element={<NGODashboard />} />

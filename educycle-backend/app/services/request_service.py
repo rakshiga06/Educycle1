@@ -23,6 +23,24 @@ async def create_request(book_id: str, requester_uid: str, donor_uid: str, picku
         "created_at": datetime.utcnow(),
     })
 
+    # Notify donor about the new request
+    try:
+        requester_name = requester_info.get("name") or "A student"
+        print(f"DEBUG: Creating notification for donor {donor_uid} from {requester_name}")
+        notification_data = {
+            "user_uid": donor_uid,
+            "type": "new_request",
+            "title": "New Book Request! 📚",
+            "body": f"{requester_name} has requested a book from you. Check your requests to respond.",
+            "message": f"{requester_name} has requested a book from you.", # Deprecated compatibility
+            "related_id": ref.id,
+            "read": False,
+            "timestamp": datetime.utcnow()
+        }
+        db.collection("notifications").add(notification_data)
+    except Exception as e:
+        print(f"Failed to send donor notification: {e}")
+
     return ref.id
 
 
@@ -37,24 +55,29 @@ async def update_request_status(request_id: str, status: str):
         "status": status
     })
     
-    # Notify requester if accepted
-    if status == "accepted":
+    # Notify requester if approved/accepted
+    if status in ["accepted", "approved"]:
+        donor_name = data.get('donor_name') or "The donor"
+        print(f"DEBUG: Notifying requester {data['requester_uid']} that {donor_name} accepted")
         notification_data = {
             "user_uid": data["requester_uid"],
             "type": "request_accepted",
-            "title": "Book Request Accepted!",
-            "body": f"Your request for a book has been accepted by {data.get('donor_name', 'the donor')}.",
+            "title": "Your Book Request was Accepted! 🎉",
+            "body": f"Great news! {donor_name} has accepted your request for a book. You can now start a chat to arrange the pickup!",
+            "message": f"Your request was accepted by {donor_name}.", # Compatibility
             "related_id": request_id,
             "read": False,
             "timestamp": datetime.utcnow()
         }
         db.collection("notifications").add(notification_data)
     elif status == "rejected":
+         donor_name = data.get('donor_name') or "The donor"
          notification_data = {
             "user_uid": data["requester_uid"],
             "type": "request_rejected",
-            "title": "Book Request Update",
-            "body": f"Your request for a book was not accepted this time.",
+            "title": "Update on your Book Request 📚",
+            "body": f"Unfortunately, {donor_name} couldn't fulfill your request this time. Don't worry, there are plenty of other books waiting for you!",
+            "message": f"Your request was rejected by {donor_name}.", # Compatibility
             "related_id": request_id,
             "read": False,
             "timestamp": datetime.utcnow()

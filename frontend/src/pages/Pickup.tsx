@@ -4,7 +4,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MapPin, CheckCircle, Camera, Upload } from 'lucide-react';
+import { ArrowLeft, MapPin, CheckCircle, Camera, Upload, Shield } from 'lucide-react';
 import { mockRequests } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
 
@@ -53,7 +53,7 @@ const Pickup = () => {
             </div>
             <h1 className="text-3xl font-display font-bold mb-4">Book Received!</h1>
             <p className="text-muted-foreground mb-6">
-              Congratulations! You've successfully received your book. 
+              Congratulations! You've successfully received your book.
               Redirecting you to leave feedback...
             </p>
           </div>
@@ -86,7 +86,7 @@ const Pickup = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Requested on {new Date(request.requestDate).toLocaleDateString()}
               </p>
-              
+
               <div className="flex items-start gap-3 p-4 rounded-xl bg-success/5 border border-success/20">
                 <MapPin className="h-5 w-5 text-success mt-0.5" />
                 <div>
@@ -126,6 +126,15 @@ const Pickup = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Safety Reminder */}
+          <div className="mb-6 p-4 rounded-xl bg-warning/10 border border-warning/20 flex gap-3">
+            <Shield className="h-5 w-5 text-warning shrink-0" />
+            <p className="text-sm text-warning-foreground">
+              <strong>Meeting for pickup?</strong> Always meet in a safe, public place and bring a friend.
+              <Link to="/safety" className="underline ml-1 font-bold">Read our safety guidelines</Link>
+            </p>
+          </div>
 
           {/* Confirm Button */}
           <Button size="lg" className="w-full" onClick={handleConfirm}>

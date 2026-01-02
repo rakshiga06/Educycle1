@@ -14,54 +14,64 @@ db = firestore.client()
 # 2. Define Mock Data
 mock_ngos = [
     {
-        "email": "contact@techforall.org",
+        "email": "contact@tambaramedu.org",
         "password": "Password@123",
-        "name": "TechForAll Foundation",
-        "city": "Mumbai",
-        "area": "Andheri West",
-        "phone": "+91 9876543210",
-        "description": "Empowering underprivileged students with digital literacy and coding skills.",
-        "website": "www.techforall.org"
+        "name": "Tambaram NGO Foundation",
+        "city": "Chennai",
+        "area": "Tambaram",
+        "phone": "+91 9123456780",
+        "description": "NGO dedicated to providing schooling aids to children in South Chennai.",
+        "website": "www.tambaramngo.org",
+        "lat": 12.9229, 
+        "lon": 80.1275
     },
     {
-        "email": "info@ruralreads.org",
+        "email": "books@velacherykids.org",
         "password": "Password@123",
-        "name": "Rural Reads Initiative",
-        "city": "Pune",
-        "area": "Shivajinagar",
-        "phone": "+91 8765432109",
-        "description": "Bringing libraries and reading materials to rural village schools.",
-        "website": "www.ruralreads.org"
+        "name": "Velachery NGO Trust",
+        "city": "Chennai",
+        "area": "Velachery",
+        "phone": "+91 9234567891",
+        "description": "Non-profit NGO focused on primary education and children's welfare.",
+        "website": "www.velacheryngo.org",
+        "lat": 12.9791,
+        "lon": 80.2185
     },
     {
-        "email": "support@cityyouthlib.org",
+        "email": "admin@annanagaredu.org",
         "password": "Password@123",
-        "name": "City Youth Library",
-        "city": "Delhi",
-        "area": "Connaught Place",
-        "phone": "+91 7654321098",
-        "description": "A safe community space for urban youth to study and learn.",
-        "website": "www.cityyouthlib.org"
+        "name": "Anna Nagar NGO Center",
+        "city": "Chennai",
+        "area": "Anna Nagar",
+        "phone": "+91 9345678902",
+        "description": "NGO providing digital learning resources for underprivileged students.",
+        "website": "www.annanagarngo.org",
+        "lat": 13.0850,
+        "lon": 80.2101
     },
     {
-        "email": "admin@womeninstem.org",
+        "email": "hello@tnagarbooks.org",
         "password": "Password@123",
-        "name": "Women In Stem Trust",
-        "city": "Bangalore",
-        "area": "Indiranagar",
-        "phone": "+91 6543210987",
-        "description": "Supporting young girls in pursuing careers in Science, Technology, Engineering, and Math.",
-        "website": "www.womeninstem.org"
+        "name": "T-Nagar Youth NGO",
+        "city": "Chennai",
+        "area": "T-Nagar",
+        "phone": "+91 9456789013",
+        "description": "City-based NGO connecting student donors with eager learners.",
+        "website": "www.tnagarngo.org",
+        "lat": 13.0418,
+        "lon": 80.2341
     },
     {
         "email": "hello@greenearthedu.org",
         "password": "Password@123",
-        "name": "Green Earth Educators",
+        "name": "Adyar Eco NGO",
         "city": "Chennai",
         "area": "Adyar",
         "phone": "+91 5432109876",
-        "description": "Teaching sustainability and environmental science through books and workshops.",
-        "website": "www.greenearthedu.org"
+        "description": "NGO teaching sustainability and environmental science to students.",
+        "website": "www.adyarecongo.org",
+        "lat": 13.0067,
+        "lon": 80.2545
     }
 ]
 
@@ -100,7 +110,8 @@ for ngo in mock_ngos:
             "website": ngo["website"],
             "is_verified": True, # <--- VERIFIED STATUS
             "created_at": firestore.SERVER_TIMESTAMP,
-            "edu_credits": 100 # Give them some starting credits
+            "edu_credits": 100, # Give them some starting credits
+            "coordinates": {"lat": ngo["lat"], "lon": ngo["lon"]} if "lat" in ngo else None
         }
         
         # Merge ensures we don't overwrite existing fields if we just want to update verified status

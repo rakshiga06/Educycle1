@@ -149,25 +149,21 @@ async def login_with_otp(request: LoginOtpRequest):
 
 @router.post("/login")
 async def login_with_password(request: LoginPasswordRequest):
-    """Login with email and password for returning users"""
+    """Login with email and password for returning users - Optimized"""
     from firebase_admin import auth as firebase_auth
     from fastapi import HTTPException
-    import requests
-    import os
-    from dotenv import load_dotenv
+    import httpx
+    import time
+    from app.core.config import settings
     
-    # Explicitly load .env file
-    load_dotenv()
+    start_time = time.time()
     
-    # Get Firebase API key
-    FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY")
+    # Get Firebase API key from settings
+    FIREBASE_API_KEY = settings.FIREBASE_API_KEY
     
-    # Debug logging
     if not FIREBASE_API_KEY:
-        print("CRITICAL ERROR: FIREBASE_API_KEY is not set in environment or .env file.")
-    else:
-        masked_key = f"{FIREBASE_API_KEY[:5]}...{FIREBASE_API_KEY[-5:]}" if len(FIREBASE_API_KEY) > 10 else "***"
-        print(f"DEBUG: Using Firebase API Key: {masked_key}")
+        print("CRITICAL ERROR: FIREBASE_API_KEY is not set.")
+        raise HTTPException(status_code=500, detail="Server configuration error")
         
     url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
     
@@ -178,7 +174,10 @@ async def login_with_password(request: LoginPasswordRequest):
     }
     
     try:
-        response = requests.post(url, json=payload, timeout=10)
+        # 1. Verify credentials via REST API (Async)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, timeout=10.0)
+            
         data = response.json()
         
         if response.status_code != 200:
@@ -194,20 +193,22 @@ async def login_with_password(request: LoginPasswordRequest):
             else:
                 raise HTTPException(status_code=400, detail=f"Authentication failed: {error_message}")
         
-        # Get user from Firebase Admin to create custom token
-        user = firebase_auth.get_user_by_email(request.email.strip().lower())
-        custom_token = firebase_auth.create_custom_token(user.uid)
+        # 2. Extract UID directly from response (Avoids extra DB call)
+        uid = data.get("localId")
+        
+        # 3. Create Custom Token
+        custom_token = firebase_auth.create_custom_token(uid)
         
         if isinstance(custom_token, bytes):
             custom_token = custom_token.decode("utf-8")
+            
+        elapsed = time.time() - start_time
+        print(f"DEBUG: Login completed in {elapsed:.4f}s")
             
         return {"status": "ok", "custom_token": custom_token}
         
     except HTTPException:
         raise
-    except requests.exceptions.RequestException as e:
-        print(f"Network error during login: {str(e)}")
-        raise HTTPException(status_code=503, detail="Authentication service temporarily unavailable")
     except Exception as e:
         print(f"Unexpected error during login: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
