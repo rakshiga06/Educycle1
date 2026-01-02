@@ -5,14 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Download, FileText, File, Upload, Loader2, Plus } from 'lucide-react';
+import { Search, Download, FileText, File, Upload, Loader2, Plus, Trash2 } from 'lucide-react';
 import { subjectOptions, classOptions } from '@/data/mockData';
 import { notesApi } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useAuth } from '@/contexts/AuthContext';
 
 const Notes = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,6 +101,16 @@ const Notes = () => {
     }
   };
 
+  const handleDelete = async (noteId: string) => {
+    try {
+        await notesApi.delete(noteId);
+        toast({ title: "Note deleted", description: "The note has been removed." });
+        fetchNotes();
+    } catch (error: any) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
   const filteredNotes = notes.filter(note => {
     const matchesSearch = note.title?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSubject = !selectedSubject || note.subject === selectedSubject;
@@ -166,7 +178,7 @@ const Notes = () => {
                       required
                     >
                       <option value="">Select Class</option>
-                      {classOptions.slice(8).map(c => <option key={c} value={c}>Class {c}</option>)}
+                      {classOptions.map(c => <option key={c} value={c}>Class {c}</option>)}
                     </select>
                   </div>
                 </div>
@@ -235,7 +247,7 @@ const Notes = () => {
               >
                 All Classes
               </Badge>
-              {['9', '10', '11', '12'].map(cls => (
+              {classOptions.map(cls => (
                 <Badge
                   key={cls}
                   variant={selectedClass === cls ? 'default' : 'outline'}
@@ -286,12 +298,29 @@ const Notes = () => {
                       <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">Downloads</span>
                       <span className="text-sm font-bold">{note.downloads || 0}</span>
                     </div>
-                    <a href={note.file_url} target="_blank" rel="noopener noreferrer" className="block !w-auto">
-                      <Button size="sm" className="gap-2 shadow-sm">
-                        <Download className="h-4 w-4" />
-                        Download
-                      </Button>
-                    </a>
+                    <div className="flex gap-2">
+                       {user && note.owner_uid === user.uid && (
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            className="gap-2 shadow-sm"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                if (confirm('Are you sure you want to delete this note?')) {
+                                    handleDelete(note.id);
+                                }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                       )}
+                       <a href={note.file_url} target="_blank" rel="noopener noreferrer" className="block !w-auto">
+                        <Button size="sm" className="gap-2 shadow-sm">
+                            <Download className="h-4 w-4" />
+                            Download
+                        </Button>
+                       </a>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

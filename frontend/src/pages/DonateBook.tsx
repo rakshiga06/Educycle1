@@ -301,7 +301,7 @@ const DonateBook = () => {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Class</label>
                     <div className="flex flex-wrap gap-2">
-                      {classOptions.slice(6).map(c => (
+                      {classOptions.map(c => (
                         <Badge
                           key={c}
                           variant={bookClass === c ? 'default' : 'outline'}
@@ -467,9 +467,42 @@ const DonateBook = () => {
                             } finally {
                               setSearchingLocations(false);
                             }
-                          }, (e) => {
-                            setSearchingLocations(false);
-                            toast({ title: "Permission denied", description: "Please enter city/area manually or allow location access.", variant: "destructive" });
+                          }, async (error) => {
+                            // On permission error, try IP fallback
+                            setSearchingLocations(true);
+                            try {
+                              const result = await locationApi.searchPickupPoints();
+                              setPickupPoints(result.pickup_points);
+                              
+                              if (result.user_location && (result.user_location as any).detected_address) {
+                                const addr = (result.user_location as any).detected_address;
+                                if (addr.city) setCity(addr.city);
+                                if (addr.area) setArea(addr.area);
+                                toast({ 
+                                  title: "Location Detected via IP", 
+                                  description: `Permission denied, but found location near ${addr.area || addr.city}.` 
+                                });
+                              }
+                            } catch (fallbackError) {
+                                setSearchingLocations(false);
+                                let errorMessage = "Please enter city/area manually.";
+                                let errorTitle = "Location Access Denied";
+                                
+                                switch(error.code) {
+                                  case 1: // PERMISSION_DENIED
+                                    errorTitle = "Permission Denied";
+                                    errorMessage = "Please enable location access in settings or enter address manually.";
+                                    break;
+                                }
+                                
+                                toast({ 
+                                  title: errorTitle, 
+                                  description: errorMessage, 
+                                  variant: "destructive" 
+                                });
+                            } finally {
+                              setSearchingLocations(false);
+                            }
                           });
                         } else {
                           toast({ title: "Geolocation not supported", description: "Please enter location manually", variant: "destructive" });

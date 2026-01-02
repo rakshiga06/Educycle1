@@ -237,6 +237,10 @@ export const notesApi = {
 
     return apiRequestMultipart('/notes/', formData);
   },
+
+  delete: async (noteId: string) => {
+    return apiRequest(`/notes/${noteId}`, { method: 'DELETE' });
+  },
 };
 
 // NGO API
