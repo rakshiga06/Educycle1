@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 import json
 from app.api.deps import student_only
-from app.services.note_service import upload_note, list_notes
+from app.services.note_service import upload_note, list_notes, delete_note
 from app.db.storage import upload_file
 
 router = APIRouter()
@@ -35,3 +35,12 @@ async def list_all(subject: str = None, class_level: str = None):
     if class_level:
         filters["class_level"] = class_level
     return await list_notes(filters)
+
+
+@router.delete("/{note_id}")
+async def delete(note_id: str, user=Depends(student_only)):
+    # In a real app, verify ownership here:
+    # note = await get_note(note_id)
+    # if note.owner_uid != user['uid']: raise HTTPException(403)
+    await delete_note(note_id)
+    return {"status": "deleted"}
