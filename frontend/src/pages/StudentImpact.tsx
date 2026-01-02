@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import StatCard from '@/components/shared/StatCard';
@@ -37,12 +38,17 @@ const StudentImpact = () => {
     );
   }
 
-  const data = impactData || {
+  const { eduCredits } = useAuth();
+  
+  const data = impactData ? {
+    ...impactData,
+    edu_credits: (impactData.edu_credits === 0 && eduCredits > 0) ? eduCredits : impactData.edu_credits
+  } : {
     books_shared: 0,
     books_received: 0,
     money_saved_inr: 0,
     paper_saved_kg: 0,
-    edu_credits: 0,
+    edu_credits: eduCredits || 0,
     trees_protected: 0,
     co2_saved_kg: 0
   };

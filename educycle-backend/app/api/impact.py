@@ -7,4 +7,11 @@ router = APIRouter()
 
 @router.get("/")
 async def impact(user=Depends(verify_firebase_token)):
-    return await calculate_user_impact(user["uid"])
+    print(f"DEBUG: Impact endpoint called for user {user['uid']}")
+    try:
+        data = await calculate_user_impact(user["uid"])
+        print(f"DEBUG: Impact data calculated: {data}")
+        return data
+    except Exception as e:
+        print(f"ERROR in impact endpoint: {e}")
+        raise e
