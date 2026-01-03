@@ -1,5 +1,6 @@
 import httpx
 import math
+import re
 from app.db.firestore import db
 from datetime import datetime
 
@@ -38,10 +39,25 @@ async def reverse_geocode_coordinates(lat: float, lon: float):
         if res.status_code == 200:
             data = res.json()
             address = data.get("address", {})
+            
             # Try to find city/area equivalent fields
-            city = address.get("city") or address.get("town") or address.get("village") or address.get("county") or ""
+            city = address.get("city") or address.get("town") or address.get("village") or address.get("county") or address.get("state_district") or ""
             area = address.get("suburb") or address.get("neighbourhood") or address.get("residential") or address.get("road") or ""
-            return {"city": city, "area": area, "display_name": data.get("display_name")}
+            
+            # Clean up city names
+            for suffix in [" District", " Corporation", " City", " Municipal Corporation"]:
+                if city.endswith(suffix):
+                    city = city.replace(suffix, "")
+                    
+            # Clean up area names (OSM often adds "Zone XX" for Indian cities)
+            area = re.sub(r"Zone \d+ ", "", area)
+            area = re.sub(r"Ward \d+ ", "", area)
+
+            return {
+                "city": city.strip(), 
+                "area": area.strip(), 
+                "display_name": data.get("display_name")
+            }
     except Exception as e:
         print(f"Reverse geocode failed: {e}")
         
