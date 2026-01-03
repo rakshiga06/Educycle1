@@ -323,26 +323,20 @@ const RequestBook = () => {
                               setPickupPoints(result.pickup_points);
 
                               // Auto-fill address if detected
-                              if (result.user_location && (result.user_location as any).detected_address) {
-                                const addr = (result.user_location as any).detected_address;
+                              const addr = (result.user_location as any)?.detected_address;
+
+                              // Auto-fill address if detected
+                              if (addr) {
                                 if (addr.city) setCity(addr.city);
                                 if (addr.area) setArea(addr.area);
 
-                                if (castedResult.search_expanded) {
-                                  toast({
-                                    title: "Search Expanded",
-                                    description: `No NGOs within 5km. Showing results from up to 50km away.`
-                                  });
-                                } else {
-                                  toast({
-                                    title: "Location Detected",
-                                    description: `Found verified NGOs nearby.`
-                                  });
-                                }
+                                toast({
+                                  title: castedResult.search_expanded ? "Search Expanded" : "Location Detected",
+                                  description: addr.display_name ? `Searching near: ${addr.display_name}` : `Searching near ${addr.area}, ${addr.city}`
+                                });
                               } else {
                                 toast({ title: "Location Detected", description: "Found nearby pickup points." });
                               }
-
                               if (result.pickup_points.length === 0) {
                                 toast({ title: "No NGOs found nearby", description: "Try manually searching a wider area." });
                               }

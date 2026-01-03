@@ -448,13 +448,17 @@ const DonateBook = () => {
                               const { latitude, longitude } = position.coords;
                               const result = await locationApi.searchPickupPoints(undefined, undefined, latitude, longitude);
                               setPickupPoints(result.pickup_points);
+                              const addr = (result.user_location as any)?.detected_address;
 
                               // Auto-fill address if detected
-                              if (result.user_location && (result.user_location as any).detected_address) {
-                                const addr = (result.user_location as any).detected_address;
+                              if (addr) {
                                 if (addr.city) setCity(addr.city);
                                 if (addr.area) setArea(addr.area);
-                                toast({ title: "Location Detected", description: `Searching near ${addr.area}, ${addr.city}` });
+
+                                toast({
+                                  title: "Location Detected",
+                                  description: addr.display_name ? `Searching near: ${addr.display_name}` : `Searching near ${addr.area}, ${addr.city}`
+                                });
                               } else {
                                 toast({ title: "Location Detected", description: "Found nearby pickup points." });
                               }
