@@ -14,6 +14,18 @@ db = firestore.client()
 # 2. Define Mock Data
 mock_ngos = [
     {
+        "email": "contact@techforall.org",
+        "password": "Password@123",
+        "name": "Tech For All Foundation",
+        "city": "Mumbai",
+        "area": "Andheri",
+        "phone": "+91 9876543210",
+        "description": "Empowering students with technology and educational resources.",
+        "website": "www.techforall.org",
+        "lat": 19.1136, 
+        "lon": 72.8697
+    },
+    {
         "email": "contact@tambaramedu.org",
         "password": "Password@123",
         "name": "Tambaram NGO Foundation",
@@ -84,8 +96,9 @@ for ngo in mock_ngos:
         # Check if user exists
         try:
             user = auth.get_user_by_email(ngo["email"])
-            print(f"User {ngo['email']} already exists. Updating profile...")
+            print(f"User {ngo['email']} already exists. Updating profile & password...")
             uid = user.uid
+            auth.update_user(uid, password=ngo["password"])
         except auth.UserNotFoundError:
             # Create new user
             user = auth.create_user(

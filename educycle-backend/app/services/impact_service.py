@@ -1,4 +1,4 @@
-from app.db.firestore import db
+from app.db.firestore import db, get_user_by_uid
 
 
 async def calculate_user_impact(uid: str):
@@ -18,7 +18,6 @@ async def calculate_user_impact(uid: str):
     bulk_fulfilled = sum(doc.to_dict().get("fulfilled", 0) for doc in bulk_docs)
 
     # EduCredits from profile
-    from app.db.firestore import get_user_by_uid
     profile = await get_user_by_uid(uid)
     edu_credits = profile.get("edu_credits", 0) if profile else 0
     role = profile.get("role", "student") if profile else "student"

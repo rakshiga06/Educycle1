@@ -144,7 +144,7 @@ const RequestStatus = () => {
     }
   };
 
-  const myRequests = requests.filter(r => r.requester_uid === user?.uid);
+  const myRequests = requests.filter(r => r.requester_uid === user?.uid && r.status !== 'completed');
   const incomingRequests = requests.filter(r => r.donor_uid === user?.uid);
 
   return (
@@ -158,7 +158,7 @@ const RequestStatus = () => {
 
         {/* Status Filter Tabs */}
         <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-          {['all', 'pending', 'approved', 'rejected', 'completed'].map((status) => (
+          {['all', 'pending', 'approved', 'rejected'].map((status) => (
             <Badge
               key={status}
               variant={selectedStatus === status ? 'default' : 'outline'}

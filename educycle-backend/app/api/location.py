@@ -22,15 +22,19 @@ async def get_pickup_points(
 
     if search_lat is None or search_lon is None:
         if not city or not area:
-             raise HTTPException(status_code=400, detail="Provide either (lat, lon) or (city, area)")
+             # Fallback to IP Geolocation (Mocked for dev to Mumbai)
+             # In a real app, use request.client.host with a geoip library
+             search_lat, search_lon = 19.0760, 72.8777
+             detected_address = {"city": "Mumbai", "area": "Maharashtra (IP Detected)"}
              
-        address = f"{area}, {city}"
-        try:
-            search_lat, search_lon = await geocode_address(address)
-            if search_lat is None:
-                 search_lat, search_lon = await geocode_address(city)
-        except Exception as e:
-             raise HTTPException(status_code=500, detail=f"Geocoding service unavailable: {str(e)}")
+        else:
+            address = f"{area}, {city}"
+            try:
+                search_lat, search_lon = await geocode_address(address)
+                if search_lat is None:
+                     search_lat, search_lon = await geocode_address(city)
+            except Exception as e:
+                 raise HTTPException(status_code=500, detail=f"Geocoding service unavailable: {str(e)}")
     else:
         # If lat/lon provided, reverse geocode to get city/area name for UI
         detected_address = await reverse_geocode_coordinates(search_lat, search_lon)

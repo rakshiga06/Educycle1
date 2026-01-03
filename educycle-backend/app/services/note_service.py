@@ -24,3 +24,7 @@ async def list_notes(filters: dict):
 
     docs = query.stream()
     return [{**doc.to_dict(), "id": doc.id} for doc in docs]
+
+
+async def delete_note(note_id: str):
+    db.collection("notes").document(note_id).delete()
