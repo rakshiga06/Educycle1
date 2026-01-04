@@ -13,12 +13,21 @@ async def donate_book(uid: str, payload: dict, image_urls: list[str]):
         "donor_uid": uid,
         "donor_name": user_info["name"],
         "image_urls": image_urls,
+        "status": "available",
         "available": True,
         "created_at": datetime.utcnow(),
     }
 
     ref.set(data)
     return ref.id
+
+
+async def update_book_status(book_id: str, status: str):
+    available = (status == "available")
+    db.collection("books").document(book_id).update({
+        "status": status,
+        "available": available
+    })
 
 
 async def search_books(filters: dict, exclude_uid: str = None, blocked_uids: list[str] = None):
@@ -94,3 +103,22 @@ async def get_book(book_id: str):
 
 async def mark_book_unavailable(book_id: str):
     db.collection("books").document(book_id).update({"available": False})
+
+
+async def get_my_books(uid: str):
+    docs = db.collection("books").where(filter=FieldFilter("donor_uid", "==", uid)).stream()
+    return [{**doc.to_dict(), "id": doc.id} for doc in docs]
+
+
+async def delete_book(book_id: str, uid: str):
+    ref = db.collection("books").document(book_id)
+    doc = ref.get()
+
+    if not doc.exists:
+        return False
+
+    if doc.to_dict().get("donor_uid") != uid:
+        return False
+
+    ref.delete()
+    return True

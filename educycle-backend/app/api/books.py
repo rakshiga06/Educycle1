@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form, Request
 import json
 from app.api.deps import student_only, get_current_user
-from app.services.book_service import donate_book, search_books, get_book
+from app.services.book_service import donate_book, search_books, get_book, get_my_books, delete_book
 from app.db.storage import upload_file
 from app.db.firestore import get_blocked_uids
 
@@ -29,6 +29,19 @@ async def get_book_detail(book_id: str):
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
     return book
+
+
+@router.get("/user/me")
+async def list_my_books(user=Depends(student_only)):
+    return await get_my_books(user["uid"])
+
+
+@router.delete("/{book_id}")
+async def delete(book_id: str, user=Depends(student_only)):
+    success = await delete_book(book_id, user["uid"])
+    if not success:
+        raise HTTPException(status_code=404, detail="Book not found or unauthorized")
+    return {"status": "success"}
 
 
 @router.post("/donate")

@@ -150,6 +150,16 @@ export const booksApi = {
 
     return apiRequestMultipart('/books/donate', formData);
   },
+
+  listMyDonations: async () => {
+    return apiRequest('/books/user/me');
+  },
+
+  delete: async (bookId: string) => {
+    return apiRequest(`/books/${bookId}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 // Requests API
@@ -238,8 +248,19 @@ export const notesApi = {
     return apiRequestMultipart('/notes/', formData);
   },
 
+<<<<<<< HEAD
   delete: async (noteId: string) => {
     return apiRequest(`/notes/${noteId}`, { method: 'DELETE' });
+=======
+  listMyNotes: async () => {
+    return apiRequest('/notes/me');
+  },
+
+  delete: async (noteId: string) => {
+    return apiRequest(`/notes/${noteId}`, {
+      method: 'DELETE',
+    });
+>>>>>>> 2685659 (Updated Donations and Notes&PDFs)
   },
 };
 

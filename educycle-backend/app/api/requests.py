@@ -46,13 +46,12 @@ async def approve(request_id: str, user=Depends(get_current_user)):
     await update_request_status(request_id, "approved")
     req = await get_request(request_id)
     # Fetch book info to get the title
-    # Fetch book info to get the title
-    from app.services.book_service import get_book, mark_book_unavailable
+    from app.services.book_service import get_book, update_book_status
     book = await get_book(req["book_id"])
     book_title = book.get("title", "Book Chat") if book else "Book Chat"
 
-    # Mark book unavailable immediately
-    await mark_book_unavailable(req["book_id"])
+    # Mark book as assigned immediately
+    await update_book_status(req["book_id"], "assigned")
 
     await create_chat(request_id, [
         req["requester_uid"],
@@ -74,10 +73,10 @@ async def complete(request_id: str):
     await update_request_status(request_id, "completed")
     req = await get_request(request_id)
     if req:
-        from app.services.book_service import mark_book_unavailable, get_book
+        from app.services.book_service import update_book_status, get_book
         from app.services.credits_service import add_edu_credits
         
-        await mark_book_unavailable(req["book_id"])
+        await update_book_status(req["book_id"], "donated")
         
         # Award credits to donor
         book = await get_book(req["book_id"])

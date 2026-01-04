@@ -28,13 +28,16 @@ async def upload(
 
 
 @router.get("/")
-async def list_all(subject: str = None, class_level: str = None):
+async def list_all(subject: str = None, class_level: str = None, owner_uid: str = None):
     filters = {}
     if subject:
         filters["subject"] = subject
     if class_level:
         filters["class_level"] = class_level
+    if owner_uid:
+        filters["owner_uid"] = owner_uid
     return await list_notes(filters)
+
 
 
 @router.delete("/{note_id}")
@@ -44,3 +47,16 @@ async def delete(note_id: str, user=Depends(student_only)):
     # if note.owner_uid != user['uid']: raise HTTPException(403)
     await delete_note(note_id)
     return {"status": "deleted"}
+
+@router.get("/me")
+async def list_my_notes(user=Depends(student_only)):
+    return await list_notes({"owner_uid": user["uid"]})
+
+
+@router.delete("/{note_id}")
+async def delete(note_id: str, user=Depends(student_only)):
+    success = await delete_note(note_id, user["uid"])
+    if not success:
+        raise HTTPException(status_code=404, detail="Note not found or unauthorized")
+    return {"status": "success"}
+

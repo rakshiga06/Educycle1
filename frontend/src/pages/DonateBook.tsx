@@ -6,11 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Upload, CheckCircle, Camera, Loader2, Shield, Search, MapPin } from 'lucide-react';
+import { Gift, Upload, CheckCircle, Camera, Loader2, Shield, Search, MapPin, Trash2, Package } from 'lucide-react';
 import { boardOptions, subjectOptions, classOptions } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
 import { booksApi, locationApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEffect } from 'react';
 
 const conditionOptions = [
   { id: 'good', label: 'Good', description: 'No damage, clean pages' },
@@ -35,6 +37,9 @@ const DonateBook = () => {
   const [images, setImages] = useState<File[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('donate');
+  const [myDonations, setMyDonations] = useState<any[]>([]);
+  const [donationsLoading, setDonationsLoading] = useState(false);
 
   // Safe Location Search State
   const [searchingLocations, setSearchingLocations] = useState(false);
@@ -45,6 +50,43 @@ const DonateBook = () => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       setImages(files);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchMyDonations();
+    }
+  }, [user]);
+
+  const fetchMyDonations = async () => {
+    try {
+      setDonationsLoading(true);
+      const data = await booksApi.listMyDonations();
+      setMyDonations(data as any[] || []);
+    } catch (error: any) {
+      console.error("Error fetching my donations:", error);
+    } finally {
+      setDonationsLoading(false);
+    }
+  };
+
+  const handleDeleteDonation = async (bookId: string) => {
+    if (!confirm("Are you sure you want to remove this book donation listing?")) return;
+
+    try {
+      await booksApi.delete(bookId);
+      toast({
+        title: "Success",
+        description: "Donation listing removed",
+      });
+      fetchMyDonations();
+    } catch (error: any) {
+      toast({
+        title: "Delete failed",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -148,6 +190,7 @@ const DonateBook = () => {
         title: "Book listed for donation!",
         description: "Students in need can now see your book.",
       });
+      fetchMyDonations();
     } catch (error: any) {
       console.error('Error donating book:', error);
       toast({
@@ -222,43 +265,13 @@ const DonateBook = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            <button
-              onClick={() => setDonationType('single')}
-              className={`p-4 rounded-xl border-2 text-left transition-all ${donationType === 'single'
-                ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                : 'border-border hover:border-primary/30'
-                }`}
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${donationType === 'single' ? 'bg-primary text-white' : 'bg-muted'}`}>
-                  <Gift className="h-5 w-5" />
-                </div>
-                <span className="font-bold">Single Book</span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-tight">
-                Donate one specific textbook or notebook
-              </p>
-            </button>
-            <button
-              onClick={() => setDonationType('set')}
-              className={`p-4 rounded-xl border-2 text-left transition-all ${donationType === 'set'
-                ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                : 'border-border hover:border-primary/30'
-                }`}
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${donationType === 'set' ? 'bg-primary text-white' : 'bg-muted'}`}>
-                  <Gift className="h-5 w-5" />
-                </div>
-                <span className="font-bold">Full Class Set</span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-tight">
-                Donate all books for a specific grade/year
-              </p>
-            </button>
-          </div>
+          <Tabs defaultValue="donate" className="w-full" onValueChange={setActiveTab}>
+            <TabsList className="grid w-full max-w-[400px] grid-cols-2 mb-8">
+              <TabsTrigger value="donate">Donate New Book</TabsTrigger>
+              <TabsTrigger value="my">My Donations</TabsTrigger>
+            </TabsList>
 
+<<<<<<< HEAD
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Book Details */}
             <Card>
@@ -540,72 +553,444 @@ const DonateBook = () => {
                 </div>
 
                 <Button
+=======
+            <TabsContent value="donate" className="mt-0">
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <button
+>>>>>>> 2685659 (Updated Donations and Notes&PDFs)
                   type="button"
-                  onClick={handleSearchLocations}
-                  disabled={searchingLocations}
-                  variant="secondary"
-                  className="w-full"
+                  onClick={() => setDonationType('single')}
+                  className={`p-4 rounded-xl border-2 text-left transition-all ${donationType === 'single'
+                    ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                    : 'border-border hover:border-primary/30'
+                    }`}
                 >
-                  {searchingLocations ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
-                  Find Verified NGOs Nearby
-                </Button>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${donationType === 'single' ? 'bg-primary text-white' : 'bg-muted'}`}>
+                      <Gift className="h-5 w-5" />
+                    </div>
+                    <span className="font-bold">Single Book</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-tight">
+                    Donate one specific textbook or notebook
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDonationType('set')}
+                  className={`p-4 rounded-xl border-2 text-left transition-all ${donationType === 'set'
+                    ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                    : 'border-border hover:border-primary/30'
+                    }`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${donationType === 'set' ? 'bg-primary text-white' : 'bg-muted'}`}>
+                      <Gift className="h-5 w-5" />
+                    </div>
+                    <span className="font-bold">Full Class Set</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-tight">
+                    Donate all books for a specific grade/year
+                  </p>
+                </button>
+              </div>
 
-                {pickupPoints.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <p className="text-sm text-muted-foreground font-medium">Select a drop-off point:</p>
-                    <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                      {pickupPoints.map((point) => (
-                        <div
-                          key={point.uid}
-                          onClick={() => handleSelectPickup(point)}
-                          className={`p-3 rounded-lg border-2 cursor-pointer transition-colors flex items-center justify-between ${selectedPickupPoint?.uid === point.uid
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
-                            }`}
-                        >
-                          <div>
-                            <p className="font-semibold">{point.name}</p>
-                            <p className="text-xs text-muted-foreground">{point.area}, {point.city}</p>
-                          </div>
-                          <div className="text-right">
-                            <Badge variant="outline" className="text-xs">{point.distance_km} km</Badge>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Book Details */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Book Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {donationType === 'single' && (
+                      <>
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Book Name</label>
+                          <Input
+                            value={bookName}
+                            onChange={(e) => setBookName(e.target.value)}
+                            placeholder="E.g., Mathematics for Class 10"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">Subject</label>
+                          <div className="flex flex-wrap gap-2">
+                            {subjectOptions.slice(0, 6).map(s => (
+                              <Badge
+                                key={s}
+                                variant={subject === s ? 'default' : 'outline'}
+                                className="cursor-pointer"
+                                onClick={() => setSubject(s)}
+                              >
+                                {s}
+                              </Badge>
+                            ))}
                           </div>
                         </div>
-                      ))}
+                      </>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Class</label>
+                        <div className="flex flex-wrap gap-2">
+                          {classOptions.slice(6).map(c => (
+                            <Badge
+                              key={c}
+                              variant={bookClass === c ? 'default' : 'outline'}
+                              className="cursor-pointer"
+                              onClick={() => setBookClass(c)}
+                            >
+                              {c}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Board</label>
+                        <div className="flex flex-wrap gap-2">
+                          {boardOptions.map(b => (
+                            <Badge
+                              key={b}
+                              variant={board === b ? 'default' : 'outline'}
+                              className="cursor-pointer"
+                              onClick={() => setBoard(b)}
+                            >
+                              {b}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  </CardContent>
+                </Card>
 
-                <div className="mt-4">
-                  <label className="text-sm font-medium mb-2 block">Description (Optional)</label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Additional details about the book..."
-                    className="w-full h-24 px-4 py-3 rounded-lg border-2 border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary resize-none"
-                  />
+                {/* Condition */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Book Condition</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {conditionOptions.map(option => (
+                      <label
+                        key={option.id}
+                        className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${condition === option.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/30'
+                          }`}
+                      >
+                        <input
+                          type="radio"
+                          name="condition"
+                          value={option.id}
+                          checked={condition === option.id}
+                          onChange={(e) => setCondition(e.target.value)}
+                          className="sr-only"
+                        />
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${condition === option.id ? 'border-primary' : 'border-muted-foreground/30'
+                          }`}>
+                          {condition === option.id && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium">{option.label}</p>
+                          <p className="text-sm text-muted-foreground">{option.description}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* Photo Upload */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Camera className="h-5 w-5" />
+                      Add Photos
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <label className="block">
+                      <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
+                        <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-sm text-muted-foreground font-medium">
+                          {donationType === 'set' ? 'Upload photos of the entire set' : 'Upload photos of the book'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Show the covers and current condition
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1 italic">
+                          Max 5 photos • JPG, PNG
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                    {images.length > 0 && (
+                      <div className="mt-4 grid grid-cols-3 gap-4">
+                        {images.map((img, idx) => (
+                          <div key={idx} className="relative">
+                            <img
+                              src={URL.createObjectURL(img)}
+                              alt={`Preview ${idx + 1}`}
+                              className="w-full h-24 object-cover rounded-lg"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setImages(images.filter((_, i) => i !== idx))}
+                              className="absolute top-1 right-1 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center text-xs"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Safe Drop-off Location */}
+                <Card className="overflow-hidden border-2 border-primary/20">
+                  <CardHeader className="bg-primary/5 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-primary" />
+                      Find Safe Drop-off Location (Optional)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6 space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Select a nearby verified NGO to drop off your book safely.
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full mb-2"
+                          onClick={() => {
+                            if (navigator.geolocation) {
+                              setSearchingLocations(true);
+                              navigator.geolocation.getCurrentPosition(async (position) => {
+                                try {
+                                  const { latitude, longitude } = position.coords;
+                                  const result = await locationApi.searchPickupPoints(undefined, undefined, latitude, longitude);
+                                  setPickupPoints(result.pickup_points);
+
+                                  // Auto-fill address if detected
+                                  if (result.user_location && (result.user_location as any).detected_address) {
+                                    const addr = (result.user_location as any).detected_address;
+                                    if (addr.city) setCity(addr.city);
+                                    if (addr.area) setArea(addr.area);
+                                    toast({ title: "Location Detected", description: `Searching near ${addr.area}, ${addr.city}` });
+                                  } else {
+                                    toast({ title: "Location Detected", description: "Found nearby pickup points." });
+                                  }
+
+                                  if (result.pickup_points.length === 0) {
+                                    toast({ title: "No NGOs found nearby", description: "Try increasing search radius" });
+                                  }
+                                } catch (e: any) {
+                                  toast({ title: "Location Error", description: e.message, variant: "destructive" });
+                                } finally {
+                                  setSearchingLocations(false);
+                                }
+                              }, (e) => {
+                                setSearchingLocations(false);
+                                toast({ title: "Permission denied", description: "Please enter city/area manually or allow location access.", variant: "destructive" });
+                              });
+                            } else {
+                              toast({ title: "Geolocation not supported", description: "Please enter location manually", variant: "destructive" });
+                            }
+                          }}
+                        >
+                          <MapPin className="h-4 w-4 mr-2" />
+                          Use My Current Location
+                        </Button>
+                        <div className="relative flex items-center py-2">
+                          <div className="flex-grow border-t border-muted"></div>
+                          <span className="flex-shrink-0 mx-4 text-xs text-muted-foreground uppercase">Or search manually</span>
+                          <div className="flex-grow border-t border-muted"></div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">City</label>
+                        <Input
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          placeholder="e.g. Mumbai"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Area</label>
+                        <Input
+                          value={area}
+                          onChange={(e) => setArea(e.target.value)}
+                          placeholder="e.g. Bandra"
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={handleSearchLocations}
+                      disabled={searchingLocations}
+                      variant="secondary"
+                      className="w-full"
+                    >
+                      {searchingLocations ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
+                      Find Verified NGOs Nearby
+                    </Button>
+
+                    {pickupPoints.length > 0 && (
+                      <div className="mt-4 space-y-2">
+                        <p className="text-sm text-muted-foreground font-medium">Select a drop-off point:</p>
+                        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                          {pickupPoints.map((point) => (
+                            <div
+                              key={point.uid}
+                              onClick={() => handleSelectPickup(point)}
+                              className={`p-3 rounded-lg border-2 cursor-pointer transition-colors flex items-center justify-between ${selectedPickupPoint?.uid === point.uid
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border hover:border-primary/50'
+                                }`}
+                            >
+                              <div>
+                                <p className="font-semibold">{point.name}</p>
+                                <p className="text-xs text-muted-foreground">{point.area}, {point.city}</p>
+                              </div>
+                              <div className="text-right">
+                                <Badge variant="outline" className="text-xs">{point.distance_km} km</Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-4">
+                      <label className="text-sm font-medium mb-2 block">Description (Optional)</label>
+                      <textarea
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Additional details about the book..."
+                        className="w-full h-24 px-4 py-3 rounded-lg border-2 border-input bg-card focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary resize-none"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-500 leading-relaxed text-center">
+                  By donating, you agree to our <Link to="/safety" className="text-primary font-bold hover:underline">Safety Guidelines</Link>.
+                  Always prioritize meeting at verified NGO locations or safe public spaces for the book handover.
                 </div>
-              </CardContent>
-            </Card>
 
-            <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-500 leading-relaxed text-center">
-              By donating, you agree to our <Link to="/safety" className="text-primary font-bold hover:underline">Safety Guidelines</Link>.
-              Always prioritize meeting at verified NGO locations or safe public spaces for the book handover.
-            </div>
+                <Button type="submit" size="lg" className="w-full" variant="secondary" disabled={submitting}>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      {donationType === 'set' ? 'List Book Set for Donation' : 'List Book for Donation'}
+                    </>
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
 
-            <Button type="submit" size="lg" className="w-full" variant="secondary" disabled={submitting}>
-              {submitting ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Uploading...
-                </>
+            <TabsContent value="my" className="mt-0">
+              {donationsLoading ? (
+                <div className="flex justify-center py-20">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+                </div>
+              ) : myDonations.length > 0 ? (
+                <div className="space-y-4">
+                  {myDonations.map(book => (
+                    <Card key={book.id} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-all">
+                      <div className="flex flex-col sm:flex-row">
+                        <div className="w-full sm:w-48 h-48 bg-muted relative shrink-0">
+                          {book.image_urls && book.image_urls[0] ? (
+                            <img
+                              src={book.image_urls[0]}
+                              alt={book.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="h-12 w-12 text-muted-foreground/30" />
+                            </div>
+                          )}
+                          {book.status === 'assigned' && (
+                            <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center">
+                              <Badge variant="default" className="font-bold">Assigned</Badge>
+                            </div>
+                          )}
+                          {book.status === 'donated' && (
+                            <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
+                              <Badge variant="secondary" className="font-bold">Donated</Badge>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 p-6">
+                          <div className="flex justify-between items-start gap-4 mb-2">
+                            <div>
+                              <h3 className="font-display font-bold text-xl mb-1">{book.title}</h3>
+                              <div className="flex flex-wrap gap-2 text-sm">
+                                <Badge variant="outline">{book.subject}</Badge>
+                                <Badge variant="outline">Class {book.class_level}</Badge>
+                                <Badge variant="secondary" className="capitalize">{book.condition}</Badge>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteDonation(book.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Remove
+                            </Button>
+                          </div>
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                            {book.description || "No description provided."}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-auto">
+                            <MapPin className="h-3 w-3" />
+                            <span>{book.area}, {book.city}</span>
+                            <span className="mx-1">•</span>
+                            <span>Listed on {new Date(book.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
               ) : (
-                <>
-                  {donationType === 'set' ? 'List Book Set for Donation' : 'List Book for Donation'}
-                </>
+                <div className="text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed border-muted/50">
+                  <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                    <Gift className="h-10 w-10 text-muted-foreground/40" />
+                  </div>
+                  <h3 className="font-display font-bold text-xl mb-2">No donations yet</h3>
+                  <p className="text-muted-foreground max-w-xs mx-auto mb-6">
+                    You haven't listed any books for donation. Your discarded books could be someone's treasure!
+                  </p>
+                  <Button onClick={() => setActiveTab('donate')}>
+                    <Package className="h-4 w-4 mr-2" />
+                    List Your First Book
+                  </Button>
+                </div>
               )}
-            </Button>
-          </form>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
 

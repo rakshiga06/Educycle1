@@ -10,7 +10,12 @@ import { subjectOptions, classOptions } from '@/data/mockData';
 import { notesApi } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+<<<<<<< HEAD
 import { useAuth } from '@/contexts/AuthContext';
+=======
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { auth } from '@/lib/firebase';
+>>>>>>> 2685659 (Updated Donations and Notes&PDFs)
 
 const Notes = () => {
   const { toast } = useToast();
@@ -20,6 +25,10 @@ const Notes = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [myNotes, setMyNotes] = useState<any[]>([]);
+  const [myNotesLoading, setMyNotesLoading] = useState(false);
+  const currentUser = auth.currentUser;
 
   // Upload state
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -31,7 +40,10 @@ const Notes = () => {
 
   useEffect(() => {
     fetchNotes();
-  }, [selectedSubject, selectedClass]);
+    if (currentUser) {
+      fetchMyNotes();
+    }
+  }, [selectedSubject, selectedClass, currentUser]);
 
   const fetchNotes = async () => {
     try {
@@ -41,7 +53,7 @@ const Notes = () => {
       if (selectedClass) filters.class_level = selectedClass;
 
       const data = await notesApi.list(filters);
-      setNotes(data || []);
+      setNotes(data as any[] || []);
     } catch (error: any) {
       toast({
         title: "Error fetching notes",
@@ -50,6 +62,38 @@ const Notes = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMyNotes = async () => {
+    try {
+      setMyNotesLoading(true);
+      const data = await notesApi.listMyNotes();
+      setMyNotes(data as any[] || []);
+    } catch (error: any) {
+      console.error("Error fetching my notes:", error);
+    } finally {
+      setMyNotesLoading(false);
+    }
+  };
+
+  const handleDelete = async (noteId: string) => {
+    if (!confirm("Are you sure you want to delete these notes?")) return;
+
+    try {
+      await notesApi.delete(noteId);
+      toast({
+        title: "Success",
+        description: "Notes removed successfully",
+      });
+      fetchNotes();
+      fetchMyNotes();
+    } catch (error: any) {
+      toast({
+        title: "Delete failed",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -90,6 +134,7 @@ const Notes = () => {
 
       // Refresh list
       fetchNotes();
+      if (currentUser) fetchMyNotes();
     } catch (error: any) {
       toast({
         title: "Upload failed",
@@ -124,7 +169,7 @@ const Notes = () => {
       <Header userType="student" />
 
       <main className="flex-1 container py-8">
-        <div className="flex justify-between items-start mb-8">
+        <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-display font-bold mb-2">Notes & PDFs</h1>
             <p className="text-muted-foreground">
@@ -200,42 +245,26 @@ const Notes = () => {
           </Dialog>
         </div>
 
-        {/* Search */}
-        <div className="flex gap-3 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              placeholder="Search notes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-12"
-            />
-          </div>
-        </div>
+        <Tabs defaultValue="all" className="w-full mb-8" onValueChange={setActiveTab}>
+          <TabsList className="grid w-full max-w-[400px] grid-cols-2 mb-8">
+            <TabsTrigger value="all">All Materials</TabsTrigger>
+            <TabsTrigger value="my">My Uploaded Notes</TabsTrigger>
+          </TabsList>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-6 mb-8 p-4 bg-muted/30 rounded-xl">
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 block">Filter by Subject</label>
-            <div className="flex flex-wrap gap-2">
-              <Badge
-                variant={!selectedSubject ? 'default' : 'outline'}
-                className="cursor-pointer px-3 py-1"
-                onClick={() => setSelectedSubject('')}
-              >
-                All Subjects
-              </Badge>
-              {subjectOptions.slice(0, 6).map(subject => (
-                <Badge
-                  key={subject}
-                  variant={selectedSubject === subject ? 'default' : 'outline'}
-                  className="cursor-pointer px-3 py-1"
-                  onClick={() => setSelectedSubject(selectedSubject === subject ? '' : subject)}
-                >
-                  {subject}
-                </Badge>
-              ))}
+          <TabsContent value="all" className="mt-0">
+            {/* Search */}
+            <div className="flex gap-3 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Search notes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-12"
+                />
+              </div>
             </div>
+<<<<<<< HEAD
           </div>
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 block">Filter by Class</label>
@@ -260,39 +289,90 @@ const Notes = () => {
             </div>
           </div>
         </div>
+=======
+>>>>>>> 2685659 (Updated Donations and Notes&PDFs)
 
-        {/* Notes Grid */}
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
-          </div>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredNotes.map(note => (
-              <Card key={note.id} variant="elevated" className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all">
-                <div className={`h-1.5 w-full ${note.type === 'PDF' ? 'bg-destructive/40' : 'bg-accent/40'}`} />
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${note.type === 'PDF' ? 'bg-destructive/5' : 'bg-accent/5'
-                      }`}>
-                      {note.type === 'PDF' ? (
-                        <File className="h-7 w-7 text-destructive" />
-                      ) : (
-                        <FileText className="h-7 w-7 text-accent" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-display font-bold text-base line-clamp-2 mb-1 group-hover:text-primary transition-colors">
-                        {note.title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-4">
-                        <span className="bg-muted px-2 py-0.5 rounded">{note.subject}</span>
-                        <span>•</span>
-                        <span>Class {note.class_level}</span>
+            {/* Filters */}
+            <div className="flex flex-wrap gap-6 mb-8 p-4 bg-muted/30 rounded-xl">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 block">Filter by Subject</label>
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant={!selectedSubject ? 'default' : 'outline'}
+                    className="cursor-pointer px-3 py-1"
+                    onClick={() => setSelectedSubject('')}
+                  >
+                    All Subjects
+                  </Badge>
+                  {subjectOptions.slice(0, 6).map(subject => (
+                    <Badge
+                      key={subject}
+                      variant={selectedSubject === subject ? 'default' : 'outline'}
+                      className="cursor-pointer px-3 py-1"
+                      onClick={() => setSelectedSubject(selectedSubject === subject ? '' : subject)}
+                    >
+                      {subject}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 block">Filter by Class</label>
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant={!selectedClass ? 'default' : 'outline'}
+                    className="cursor-pointer px-3 py-1"
+                    onClick={() => setSelectedClass('')}
+                  >
+                    All Classes
+                  </Badge>
+                  {['9', '10', '11', '12'].map(cls => (
+                    <Badge
+                      key={cls}
+                      variant={selectedClass === cls ? 'default' : 'outline'}
+                      className="cursor-pointer px-3 py-1"
+                      onClick={() => setSelectedClass(selectedClass === cls ? '' : cls)}
+                    >
+                      Class {cls}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Notes Grid */}
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredNotes.map(note => (
+                  <Card key={note.id} variant="elevated" className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all">
+                    <div className={`h-1.5 w-full ${note.type === 'PDF' ? 'bg-destructive/40' : 'bg-accent/40'}`} />
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${note.type === 'PDF' ? 'bg-destructive/5' : 'bg-accent/5'
+                          }`}>
+                          {note.type === 'PDF' ? (
+                            <File className="h-7 w-7 text-destructive" />
+                          ) : (
+                            <FileText className="h-7 w-7 text-accent" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-display font-bold text-base line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+                            {note.title}
+                          </h3>
+                          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-4">
+                            <span className="bg-muted px-2 py-0.5 rounded">{note.subject}</span>
+                            <span>•</span>
+                            <span>Class {note.class_level}</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
+<<<<<<< HEAD
                   <div className="flex items-center justify-between mt-2 pt-4 border-t border-border/50">
                     <div className="flex flex-col">
                       <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">Downloads</span>
@@ -327,21 +407,130 @@ const Notes = () => {
             ))}
           </div>
         )}
+=======
+                      <div className="flex items-center justify-between mt-2 pt-4 border-t border-border/50">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">Downloads</span>
+                          <span className="text-sm font-bold">{note.downloads || 0}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          {currentUser?.uid === note.owner_uid && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDelete(note.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <a href={note.file_url} target="_blank" rel="noopener noreferrer" className="block !w-auto">
+                            <Button size="sm" className="gap-2 shadow-sm">
+                              <Download className="h-4 w-4" />
+                              Download
+                            </Button>
+                          </a>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+>>>>>>> 2685659 (Updated Donations and Notes&PDFs)
 
-        {!loading && filteredNotes.length === 0 && (
-          <div className="text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed border-muted/50">
-            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-              <FileText className="h-10 w-10 text-muted-foreground/40" />
-            </div>
-            <h3 className="font-display font-bold text-xl mb-2">No notes found</h3>
-            <p className="text-muted-foreground max-w-xs mx-auto">
-              We couldn't find any notes matching your search or filters.
-            </p>
-            <Button variant="link" className="mt-2" onClick={() => { setSearchQuery(''); setSelectedSubject(''); setSelectedClass('') }}>
-              Clear all filters
-            </Button>
-          </div>
-        )}
+            {!loading && filteredNotes.length === 0 && (
+              <div className="text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed border-muted/50">
+                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                  <FileText className="h-10 w-10 text-muted-foreground/40" />
+                </div>
+                <h3 className="font-display font-bold text-xl mb-2">No notes found</h3>
+                <p className="text-muted-foreground max-w-xs mx-auto">
+                  We couldn't find any notes matching your search or filters.
+                </p>
+                <Button variant="link" className="mt-2" onClick={() => { setSearchQuery(''); setSelectedSubject(''); setSelectedClass('') }}>
+                  Clear all filters
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="my" className="mt-0">
+            {myNotesLoading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+              </div>
+            ) : myNotes.length > 0 ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {myNotes.map(note => (
+                  <Card key={note.id} variant="elevated" className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all">
+                    <div className={`h-1.5 w-full ${note.type === 'PDF' ? 'bg-destructive/40' : 'bg-accent/40'}`} />
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${note.type === 'PDF' ? 'bg-destructive/5' : 'bg-accent/5'
+                          }`}>
+                          {note.type === 'PDF' ? (
+                            <File className="h-7 w-7 text-destructive" />
+                          ) : (
+                            <FileText className="h-7 w-7 text-accent" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-display font-bold text-base line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+                            {note.title}
+                          </h3>
+                          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-4">
+                            <span className="bg-muted px-2 py-0.5 rounded">{note.subject}</span>
+                            <span>•</span>
+                            <span>Class {note.class_level}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-2 pt-4 border-t border-border/50">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-tight">Downloads</span>
+                          <span className="text-sm font-bold">{note.downloads || 0}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDelete(note.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="ml-2">Remove</span>
+                          </Button>
+                          <a href={note.file_url} target="_blank" rel="noopener noreferrer" className="block !w-auto">
+                            <Button size="sm" variant="outline" className="gap-2 shadow-sm">
+                              <Download className="h-4 w-4" />
+                              View
+                            </Button>
+                          </a>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed border-muted/50">
+                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                  <Upload className="h-10 w-10 text-muted-foreground/40" />
+                </div>
+                <h3 className="font-display font-bold text-xl mb-2">You haven't uploaded any notes yet</h3>
+                <p className="text-muted-foreground max-w-xs mx-auto mb-6">
+                  Share your study materials to help others and earn EduCredits!
+                </p>
+                <Button onClick={() => setIsUploadOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Upload Your First Note
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
 
       <Footer />
