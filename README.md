@@ -61,6 +61,12 @@ EduCycle creates a **circular system for textbooks**:
 6. Feedback is submitted and impact metrics are updated  
 
 ---
+**Unique Differentiators**
+
+1. Focuses on reuse, not resale
+2. NGO-mediated model instead of peer-to-peer handoffs
+3. Built-in impact measurement, not an afterthought
+4. Safety-by-design rather than safety-as-policy
 
 ## 🧠 Tech Stack
 
